@@ -7,16 +7,14 @@ import ApiError from '../../errors/ApiErrors';
 
 const auth = (...roles: string[]) => async (req: Request, res: Response, next: NextFunction) => {
     try {
-        console.log("Auth middleware start");
-
         const tokenWithBearer = req.headers.authorization;
         if (!tokenWithBearer) {
             throw new ApiError(StatusCodes.UNAUTHORIZED, 'You are not authorized');
         }
 
-        // if bearer then split
+        // strip "Bearer " if present, otherwise use raw token
         const token = tokenWithBearer.startsWith('Bearer ')
-            ? tokenWithBearer.split(' ')[1]
+            ? tokenWithBearer.slice(7)
             : tokenWithBearer;
 
         // verify token
@@ -25,15 +23,18 @@ const auth = (...roles: string[]) => async (req: Request, res: Response, next: N
             config.jwt.jwt_secret as Secret
         );
 
-        // set user
-        req.user = verifyUser;
+        // 🔹 set _id for controller
+        req.user = {
+            _id: verifyUser.id,      // now _id is available
+            role: verifyUser.role,
+            email: verifyUser.email
+        };
 
-        // guard user role
+        // check roles
         if (roles.length && !roles.includes(verifyUser.role)) {
-            throw new ApiError(StatusCodes.FORBIDDEN, "You don't have permission to access this api");
+            throw new ApiError(StatusCodes.FORBIDDEN, "You don't have permission to access this API");
         }
 
-        console.log("Auth middleware end");
         next();
 
     } catch (error) {

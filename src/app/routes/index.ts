@@ -1,8 +1,9 @@
 import express from 'express';
 import { UserRoutes } from '../modules/user/user.routes';
 import { AuthRoutes } from '../modules/auth/auth.routes';
-import { PostRoutes } from '../modules/blogpost/post.route';
+// import { PostRoutes } from '../modules/blogpost/post.route';
 import { PackageRoutes } from '../modules/package/package.routes';
+import { PigeonRoutes } from '../modules/pigeon/pigeon.routes';
 import { SubscriptionRoutes } from '../modules/subscription/subscription.routes';
 
 const router = express.Router();
@@ -10,8 +11,9 @@ const router = express.Router();
 const apiRoutes = [
     { path: "/user", route: UserRoutes },
     { path: "/auth", route: AuthRoutes },
-    { path: "/post", route: PostRoutes },
+    // { path: "/post", route: PostRoutes },
     { path: "/package", route: PackageRoutes },
+    { path: "/pigeon", route: PigeonRoutes },
     { path: "/subscription", route: SubscriptionRoutes },
 
 ]
