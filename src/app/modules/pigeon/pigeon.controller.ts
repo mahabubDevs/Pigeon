@@ -98,6 +98,19 @@ const getPigeonWithFamily = catchAsync(async (req, res) => {
   });
 });
 
+
+const getSiblingsController = catchAsync(async (req, res) => {
+  const pigeonId = req.params.id;
+  const data = await PigeonService.getSiblings(pigeonId);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: 'Siblings fetched successfully',
+    data
+  });
+});
+
 export const PigeonController = {
   createPigeon,
   updatePigeon,
@@ -105,4 +118,5 @@ export const PigeonController = {
   getPigeonDetails,
   deletePigeon,
   getPigeonWithFamily,
+  getSiblingsController,
 };

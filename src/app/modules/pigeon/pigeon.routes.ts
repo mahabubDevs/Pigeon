@@ -24,5 +24,8 @@ router
 router
   .route('/family/:id')
   .get(PigeonController.getPigeonWithFamily);
+router
+  .route('/siblings/:id')
+  .get(PigeonController.getSiblingsController);
 
 export const PigeonRoutes = router;

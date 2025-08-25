@@ -221,6 +221,38 @@ const getPigeonWithFamily = async (pigeonId: string, maxDepth = 5) => {
   return fullFamily;
 };
 
+const getSiblings = async (pigeonId: string) => {
+  // Step 1: Find the pigeon
+  const pigeon = await Pigeon.findById(pigeonId);
+  if (!pigeon) throw new ApiError(StatusCodes.NOT_FOUND, 'Pigeon not found');
+
+  const fatherId = pigeon.fatherRingId;
+  const motherId = pigeon.motherRingId;
+
+  // Step 2: Full siblings (same father & same mother)
+  const fullSiblings = await Pigeon.find({
+    _id: { $ne: pigeon._id },
+    fatherRingId: fatherId,
+    motherRingId: motherId
+  }).lean();
+
+  // Step 3: Half-siblings (same father OR same mother, but not both)
+  const halfSiblings = await Pigeon.find({
+    _id: { $ne: pigeon._id },
+    $or: [
+      { fatherRingId: fatherId, motherRingId: { $ne: motherId } },
+      { motherRingId: motherId, fatherRingId: { $ne: fatherId } }
+    ]
+  }).lean();
+
+  return {
+    pigeon,
+    fullSiblings,
+    halfSiblings
+  };
+};
+
+
 export const PigeonService = {
   createPigeonToDB,
   updatePigeonToDB,
@@ -228,4 +260,5 @@ export const PigeonService = {
   getPigeonDetailsFromDB,
   deletePigeonFromDB,
   getPigeonWithFamily,
+  getSiblings,
 };
