@@ -21,5 +21,8 @@ router
     .get(PigeonController.getPigeonDetails)
     .patch(fileUploadHandler(),auth( USER_ROLES.USER), PigeonController.updatePigeon)
     .delete(auth( USER_ROLES.USER), PigeonController.deletePigeon)
+router
+  .route('/family/:id')
+  .get(PigeonController.getPigeonWithFamily);
 
 export const PigeonRoutes = router;

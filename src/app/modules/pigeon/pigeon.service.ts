@@ -188,10 +188,44 @@ const deletePigeonFromDB = async (id: string): Promise<IPigeon | null> => {
   return result;
 };
 
+
+const getPigeonWithFamily = async (pigeonId: string, maxDepth = 5) => {
+
+  // Recursive function to populate family
+  const populateFamily = async (pigeon: any, depth = 0): Promise<any> => {
+    if (!pigeon || depth >= maxDepth) return pigeon;
+
+    const populatedPigeonRaw = await Pigeon.findById(pigeon._id)
+      .populate('fatherRingId')
+      .populate('motherRingId')
+      .lean();
+
+    if (!populatedPigeonRaw) return null;
+
+    const populatedPigeon = populatedPigeonRaw;
+
+    if (populatedPigeon.fatherRingId) {
+      populatedPigeon.fatherRingId = await populateFamily(populatedPigeon.fatherRingId, depth + 1);
+    }
+    if (populatedPigeon.motherRingId) {
+      populatedPigeon.motherRingId = await populateFamily(populatedPigeon.motherRingId, depth + 1);
+    }
+
+    return populatedPigeon;
+  };
+
+  const pigeon = await Pigeon.findById(pigeonId);
+  if (!pigeon) throw new ApiError(StatusCodes.NOT_FOUND, 'Pigeon not found');
+
+  const fullFamily = await populateFamily(pigeon);
+  return fullFamily;
+};
+
 export const PigeonService = {
   createPigeonToDB,
   updatePigeonToDB,
   getAllPigeonsFromDB,
   getPigeonDetailsFromDB,
   deletePigeonFromDB,
+  getPigeonWithFamily,
 };
