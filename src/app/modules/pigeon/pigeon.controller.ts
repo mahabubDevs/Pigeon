@@ -47,7 +47,7 @@ const updatePigeon = catchAsync(async (req: Request, res: Response) => {
  * Get all pigeons
  */
 const getAllPigeons = catchAsync(async (req: Request, res: Response) => {
-  const result = await PigeonService.getAllPigeonsFromDB();
+  const result = await PigeonService.getAllPigeonsFromDB( req.query );
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -111,6 +111,35 @@ const getSiblingsController = catchAsync(async (req, res) => {
   });
 });
 
+
+// pigeon.controller.ts
+const importPigeons = catchAsync(async (req, res) => {
+  if (!req.files || !("excel" in req.files)) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, "Excel file required");
+  }
+  const file = (req.files as any).excel[0];
+  const pigeons = await PigeonService.importFromExcel(file.path, req.user);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Pigeons imported successfully",
+    data: pigeons,
+  });
+});
+
+const exportPigeonsPDF = catchAsync(async (req, res) => {
+  // req.query তে সব filter/pagination আছে
+  const pdfBuffer = await PigeonService.exportToPDF(req.query);
+
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader("Content-Disposition", "attachment; filename=pigeons.pdf");
+  res.send(pdfBuffer);
+});
+
+
+
+
 export const PigeonController = {
   createPigeon,
   updatePigeon,
@@ -119,4 +148,6 @@ export const PigeonController = {
   deletePigeon,
   getPigeonWithFamily,
   getSiblingsController,
+  importPigeons,
+  exportPigeonsPDF,
 };

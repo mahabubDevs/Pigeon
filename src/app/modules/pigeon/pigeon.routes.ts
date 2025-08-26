@@ -15,6 +15,19 @@ router
         PigeonController.createPigeon 
     )
     .get(PigeonController.getAllPigeons)
+router
+.route("/export")
+  .get(
+    auth(USER_ROLES.USER),
+    PigeonController.exportPigeonsPDF
+  );
+router
+  .route("/import")
+    .post(
+      fileUploadHandler(),
+      auth(USER_ROLES.USER),
+      PigeonController.importPigeons
+    );
 
 router
     .route("/:id")
@@ -24,8 +37,13 @@ router
 router
   .route('/family/:id')
   .get(PigeonController.getPigeonWithFamily);
+
 router
   .route('/siblings/:id')
   .get(PigeonController.getSiblingsController);
+
+
+
+
 
 export const PigeonRoutes = router;
