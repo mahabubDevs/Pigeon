@@ -7,13 +7,13 @@ import globalErrorHandler from "./app/middlewares/globalErrorHandler";
 import session from "express-session";
 
 //  SubscriptionRoutes import 
-import {createSubscriptionProduct} from "./helpers/createSubscriptionProductHelper";
+// import {createSubscriptionProduct} from "./helpers/createSubscriptionProductHelper";
 // import SubscriptionRoutes from "./app/modules/mysubscription/subscription.webhook";
 
 const app = express();
 
 // ⚡️ Stripe webhook route must be before json parser
-app.use("/api/v1/subscription", createSubscriptionProduct);
+// app.use("/api/v1/subscription", createSubscriptionProduct);
 // app.use("/api/v1/subscriptionme", SubscriptionRoutes);
 
 // morgan

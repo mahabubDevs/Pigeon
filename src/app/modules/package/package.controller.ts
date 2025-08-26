@@ -5,7 +5,13 @@ import sendResponse from "../../../shared/sendResponse";
 import { StatusCodes } from "http-status-codes";
 
 const createPackage = catchAsync(async(req: Request, res: Response)=>{
-    const result = await PackageService.createPackageToDB(req.body);
+    
+     const payload = {
+    ...req.body,
+    admin: req.user._id,  // <-- এখানে auth middleware থেকে set করা user id
+  };
+
+    const result = await PackageService.createPackageToDB(payload);
 
     sendResponse(res, {
         statusCode: StatusCodes.OK,
