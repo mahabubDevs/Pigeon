@@ -40,6 +40,14 @@ const createPigeonToDB = async (data: any, files: any, user: any): Promise<IPige
     throw new ApiError(StatusCodes.BAD_REQUEST, "Data must be valid JSON");
   }
 
+  // Free user restriction on certain fields
+
+  if (user.role !== "ADMIN" && user.role !== "SUPER_ADMIN") {
+    parsedData.verified = false;
+    parsedData.iconic = false;
+    parsedData.iconicScore = 0;
+  }
+
 
    // Step 2: Validate father/mother ring IDs
   if (parsedData.fatherRingId) {
@@ -105,7 +113,8 @@ const updatePigeonToDB = async (
   pigeonId: string,
   data: any,
   files: any,
-  deletedIndexes: number[]
+  deletedIndexes: number[],
+  user: any 
 ): Promise<IPigeon> => {
   const pigeon = await Pigeon.findById(pigeonId);
   if (!pigeon) {
@@ -120,6 +129,12 @@ const updatePigeonToDB = async (
     } catch {
       throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid JSON data");
     }
+  }
+
+  if (user.role !== "ADMIN" && user.role !== "SUPER_ADMIN") {
+    delete parsedData.verified;
+    delete parsedData.iconic;
+    delete parsedData.iconicScore;
   }
 
   // Step 2: Remove images according to deletedIndexes
@@ -378,7 +393,6 @@ const importFromExcel = async (filePath: string, user: any) => {
   return inserted;
 };
 
-
 // function isValidObjectId(id: string) {
 //   return mongoose.Types.ObjectId.isValid(id);
 // }
@@ -413,6 +427,36 @@ const exportToPDF = async (query: any): Promise<Buffer> => {
   return pdfBuffer;
 };
 
+const getMyPigeonsFromDB = async (
+  user: any, 
+  query: any
+): Promise<{ data: IPigeon[]; pagination: any }> => {
+  if (!user || !user._id) {
+    throw new ApiError(StatusCodes.UNAUTHORIZED, "User not authenticated");
+  }
+
+  // শুধু current user এর pigeon filter
+  let baseQuery = Pigeon.find({ 
+    user: user._id, 
+    status: { $ne: "Deleted" } 
+  });
+
+  const qb = new QueryBuilder<IPigeon>(baseQuery, query);
+
+  qb.search(['ringNumber', 'name', 'country', 'breeder'])
+    .filter()
+    .sort()
+    .paginate()
+    .fields()
+    .populate(['fatherRingId', 'motherRingId'],{});
+
+  const dataRaw = await qb.modelQuery.lean();
+  const data: IPigeon[] = dataRaw as unknown as IPigeon[];
+  const pagination = await qb.getPaginationInfo();
+
+  return { data, pagination };
+};
+
 
 
 
@@ -427,5 +471,6 @@ export const PigeonService = {
   getPigeonWithFamily,
   getSiblings,
   importFromExcel,
-  exportToPDF
+  exportToPDF,
+  getMyPigeonsFromDB
 };

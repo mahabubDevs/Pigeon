@@ -33,7 +33,8 @@ const updatePigeon = catchAsync(async (req: Request, res: Response) => {
     pigeonId,
     req.body.data,
     req.files,
-    deletedIndexes
+    deletedIndexes,
+    req.user
   );
 
   sendResponse(res, {
@@ -137,6 +138,17 @@ const exportPigeonsPDF = catchAsync(async (req, res) => {
   res.send(pdfBuffer);
 });
 
+const getMyPigeons = catchAsync(async (req: Request, res: Response) => {
+  const result = await PigeonService.getMyPigeonsFromDB(req.user, req.query);
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: "My pigeons retrieved successfully",
+    data: result,
+  });
+});
+
 
 
 
@@ -150,4 +162,5 @@ export const PigeonController = {
   getSiblingsController,
   importPigeons,
   exportPigeonsPDF,
+  getMyPigeons
 };

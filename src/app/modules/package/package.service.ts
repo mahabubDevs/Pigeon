@@ -5,8 +5,21 @@ import { Package } from "./package.model";
 import mongoose from "mongoose";
 import { createSubscriptionProduct } from "../../../helpers/createSubscriptionProductHelper";
 import stripe from "../../../config/stripe";
+import Stripe from "stripe";
 
 const createPackageToDB = async (payload: IPackage): Promise<IPackage | null> => {
+    // Step 0: Check if package already exists for this admin and title
+    const existingPackage = await Package.findOne({
+        title: payload.title,
+        admin: payload.admin,
+        status: "Active"
+    });
+
+    if (existingPackage) {
+        console.log("Package already exists in DB, skipping Stripe creation.");
+        return existingPackage; // Stripe create হবে না
+    }
+
     const productPayload = {
         title: payload.title,
         description: payload.description,
@@ -21,20 +34,21 @@ const createPackageToDB = async (payload: IPackage): Promise<IPackage | null> =>
         throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to create subscription product");
     }
 
-    // Step 2: Create price in Stripe (use productId from product creation)
-    const price = await stripe.prices.create({
-        unit_amount: payload.price * 100, // cents
-        currency: "usd",
-        product: product.productId,
-        recurring: {
-            interval: payload.paymentType?.toLowerCase() === "monthly" ? "month" : "year",
-        },
-    });
-
-    if (!price?.id) {
-        // Rollback: Delete created product if price creation fails
-        await stripe.products.del(product.productId);
-        throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to create subscription price");
+    // Step 2: Check again if Stripe price already exists for this product
+    const existingPrices = await stripe.prices.list({ product: product.productId });
+    let price: Stripe.Price;
+    if (existingPrices.data.length > 0) {
+        price = existingPrices.data[0]; // যদি আগে থাকে, reuse কর
+        console.log("Using existing Stripe price:", price.id);
+    } else {
+        price = await stripe.prices.create({
+            unit_amount: payload.price * 100,
+            currency: "usd",
+            product: product.productId,
+            recurring: {
+                interval: payload.paymentType?.toLowerCase() === "monthly" ? "month" : "year",
+            },
+        });
     }
 
     // Step 3: Add Stripe productId, priceId, and paymentLink to payload
@@ -46,13 +60,13 @@ const createPackageToDB = async (payload: IPackage): Promise<IPackage | null> =>
     const result = await Package.create(payload);
 
     if (!result) {
-        // Rollback: Delete Stripe product if DB save fails
         await stripe.products.del(product.productId);
         throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to create Package");
     }
 
     return result;
 };
+
 
 
 const updatePackageToDB = async(id: string, payload: IPackage): Promise<IPackage | null>=>{

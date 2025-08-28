@@ -76,7 +76,21 @@ const pigeonSchema: Schema<IPigeon> = new Schema(
       type: Schema.Types.ObjectId,
       ref: "Pigeon",
     },
-  },
+
+    // only can field use admin 
+    verified: {
+      type: Boolean,
+      default: false,
+    },
+    iconic: {
+      type: Boolean,
+      default: false,
+    },
+    iconicScore: {
+      type: Number,
+      default: 0,
+    },
+},
   {
     timestamps: true,
   }

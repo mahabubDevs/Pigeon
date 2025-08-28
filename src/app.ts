@@ -7,14 +7,19 @@ import globalErrorHandler from "./app/middlewares/globalErrorHandler";
 import session from "express-session";
 
 //  SubscriptionRoutes import 
-// import {createSubscriptionProduct} from "./helpers/createSubscriptionProductHelper";
-// import SubscriptionRoutes from "./app/modules/mysubscription/subscription.webhook";
+import handleStripeWebhook from "./helpers/handleStripeWebhook";
+
 
 const app = express();
 
 // ⚡️ Stripe webhook route must be before json parser
-// app.use("/api/v1/subscription", createSubscriptionProduct);
-// app.use("/api/v1/subscriptionme", SubscriptionRoutes);
+// app.use("/api/v1/subscription", handleStripeWebhook);
+app.post(
+  '/api/v1/subscription/webhook',
+  express.raw({ type: 'application/json' }), // raw body
+  handleStripeWebhook
+);
+
 
 // morgan
 app.use(Morgan.successHandler);

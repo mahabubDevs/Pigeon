@@ -9,7 +9,7 @@ const router = express.Router();
 
 router.get(
     '/profile',
-    auth(USER_ROLES.ADMIN, USER_ROLES.USER),
+    auth(USER_ROLES.ADMIN, USER_ROLES.USER,USER_ROLES.PAIDUSER),
     UserController.getUserProfile
 );
   
@@ -25,7 +25,7 @@ router
         UserController.createUser
     )
     .patch(
-        auth(USER_ROLES.ADMIN, USER_ROLES.USER),
+        auth(USER_ROLES.ADMIN, USER_ROLES.USER, USER_ROLES.PAIDUSER),
         fileUploadHandler(),
         UserController.updateProfile
     );

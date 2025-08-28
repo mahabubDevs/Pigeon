@@ -2,7 +2,8 @@ import { StatusCodes } from 'http-status-codes';
 import Stripe from 'stripe';
 import ApiError from '../errors/ApiErrors';
 import stripe from '../config/stripe';
-const User:any = "";
+import { User } from '../app/modules/user/user.model';
+
 
 export const handleAccountUpdatedEvent = async (data: Stripe.Account) => {
 

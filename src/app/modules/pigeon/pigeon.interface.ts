@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 
 export interface IPigeon {
-  user: mongoose.Types.ObjectId; // যে ইউজার অ্যাড করবে
+  user: mongoose.Types.ObjectId; // which user added this pigeon
   ringNumber: string;
   name?: string;
   country?: string;
@@ -19,8 +19,11 @@ export interface IPigeon {
   notes?: string;
   photos?: string[]; // multiple photo url
   results?: string; // details text
-  fatherRingId?: mongoose.Types.ObjectId; // অন্য pigeon এর ref
-  motherRingId?: mongoose.Types.ObjectId; // অন্য pigeon এর ref
+  fatherRingId?: mongoose.Types.ObjectId; //  pigeon এর ref
+  motherRingId?: mongoose.Types.ObjectId; //  pigeon এর ref
+  verified?: boolean; // admin verify 
+  iconic?: boolean; // iconic pigeon check
+  iconicScore?: number; // iconic pigeon score
   createdAt?: Date;
   updatedAt?: Date;
 }
