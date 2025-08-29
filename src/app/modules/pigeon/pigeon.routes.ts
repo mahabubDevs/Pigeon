@@ -3,8 +3,7 @@ import auth from "../../middlewares/auth";
 import { USER_ROLES } from "../../../enums/user";
 import { PigeonController } from "./pigeon.controller";
 import fileUploadHandler from "../../middlewares/fileUploaderHandler";
-import validateRequest from "../../middlewares/validateRequest";
-import { PigeonValidation } from "./pigeon.validation";
+
 
 
 const router = express.Router()
@@ -14,7 +13,7 @@ router
     .post(
         fileUploadHandler(), 
         auth( USER_ROLES.USER, USER_ROLES.PAIDUSER, USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN), 
-        validateRequest(PigeonValidation.createPigeonZodSchema),
+      
         PigeonController.createPigeon 
     )
     .get(PigeonController.getAllPigeons)

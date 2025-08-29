@@ -8,6 +8,7 @@ import generateOTP from "../../../util/generateOTP";
 import { emailTemplate } from "../../../shared/emailTemplate";
 import { emailHelper } from "../../../helpers/emailHelper";
 import unlinkFile from "../../../shared/unlinkFile";
+import { NotificationService } from "../notification/notification.service";
 
 const createAdminToDB = async (payload: any): Promise<IUser> => {
 
@@ -57,6 +58,11 @@ const createUserToDB = async (payload: Partial<IUser>): Promise<IUser> => {
         { $set: { authentication } }
     );
 
+    await NotificationService.createNotificationToDB({
+        text: `New user registered: ${createUser.name}`,
+        type: 'ADMIN',           // Admin notification
+        read: false
+    });
     return createUser;
 };
 

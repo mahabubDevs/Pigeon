@@ -28,6 +28,7 @@ export type IUser = {
     authentication?: IAuthenticationProps;
     accountInformation?: IStripeAccountInfo;
     stripeAccountId?: string;
+    pages?: string[];
 }
 
 export type UserModal = {

@@ -5,6 +5,7 @@ import stripe from '../config/stripe';
 import { Subscription } from '../app/modules/subscription/subscription.model';
 import { User } from '../app/modules/user/user.model';
 import { Package } from '../app/modules/package/package.model';
+import { NotificationService } from '../app/modules/notification/notification.service';
 
 export const handleSubscriptionCreated = async (data: Stripe.Subscription) => {
     try {
@@ -68,8 +69,18 @@ export const handleSubscriptionCreated = async (data: Stripe.Subscription) => {
             { role: 'PAIDUSER', isSubscribed: true, hasAccess: true },
             { new: true }
         );
+
+         // --- ADD NOTIFICATION ---
+        await NotificationService.createNotificationToDB({
+            text: `Your subscription for ${pricingPlan.title} is now active!`,
+            // type: 'USER',
+            // user: existingUser._id.toString(),
+            read: false,
+        });
+        
     } catch (error) {
         console.error('Subscription Created Error:', error);
         throw error;
     }
+
 };

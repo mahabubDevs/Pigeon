@@ -7,6 +7,7 @@ import mongoose from "mongoose";
 import XLSX from 'xlsx';
 import QueryBuilder from "../../../util/queryBuilder";
 import pdfDoc from "../../../helpers/pdfHelper";
+import { NotificationService } from "../notification/notification.service";
 
 /**
  * Create Pigeon in DB
@@ -100,6 +101,16 @@ if (parsedData.motherRingId) {
   if (!result) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to create pigeon");
   }
+
+
+  await NotificationService.createNotificationToDB({
+    text: `New pigeon added by ${user.name}`,
+    type: 'ADMIN',
+    // screen: 'POST',            // optional, context
+    referenceId: result._id.toString(),
+    read: false
+  });
+
 
   return result;
 };

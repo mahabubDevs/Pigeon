@@ -49,4 +49,4 @@ router.patch(
   UserController.assignPageAccess
 );
 
-export const UserRoutes = router;
+export const UserManagementRoutes = router;

@@ -2,6 +2,14 @@ import { JwtPayload } from 'jsonwebtoken';
 import { INotification } from './notification.interface';
 import { Notification } from './notification.model';
 
+
+
+
+const createNotificationToDB = async (payload: INotification): Promise<INotification> => {
+    const result = await Notification.create(payload);
+    return result;
+};
+
 // get notifications
 const getNotificationFromDB = async ( user: JwtPayload ): Promise<INotification> => {
 
@@ -43,13 +51,13 @@ const adminNotificationFromDB = async () => {
 const adminReadNotificationToDB = async (): Promise<INotification | null> => {
     const result: any = await Notification.updateMany(
         { type: 'ADMIN', read: false },
-        { $set: { read: true } },
-        { new: true }
+        { $set: { read: true } }
     );
     return result;
 };
 
 export const NotificationService = {
+    createNotificationToDB,
     adminNotificationFromDB,
     getNotificationFromDB,
     readNotificationToDB,

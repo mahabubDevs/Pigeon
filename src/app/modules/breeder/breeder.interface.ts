@@ -5,7 +5,7 @@ export interface IBreeder {
   country: string;
   email: string;
   phone: string;
-  status: string;
+  status: boolean;
   experience: number;
   gender: "Male" | "Female" | "Other";
 }

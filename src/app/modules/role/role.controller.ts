@@ -1,38 +1,28 @@
+// src/modules/role/role.controller.ts
 import { Request, Response } from "express";
-import { Role } from "./role.model";
+import catchAsync from "../../../shared/catchAsync";
+import sendResponse from "../../../shared/sendResponse";
+import { StatusCodes } from "http-status-codes";
+import { RoleService } from "./role.service";
 
-// Create Role
-export const createRole = async (req: Request, res: Response) => {
-  try {
-    const role = await Role.create(req.body);
-    res.status(201).json({
+export const RoleController = {
+  createRole: catchAsync(async (req: Request, res: Response) => {
+    const role = await RoleService.createRole(req.body);
+    sendResponse(res, {
+      statusCode: StatusCodes.CREATED,
       success: true,
       message: "Role created successfully",
       data: role,
     });
-  } catch (error) {
-    res.status(400).json({
-      success: false,
-      message: "Failed to create role",
-      error,
-    });
-  }
-};
+  }),
 
-// Get All Roles
-export const getRoles = async (req: Request, res: Response) => {
-  try {
-    const roles = await Role.find();
-    res.status(200).json({
+  getRoles: catchAsync(async (_req: Request, res: Response) => {
+    const roles = await RoleService.getRoles();
+    sendResponse(res, {
+      statusCode: StatusCodes.OK,
       success: true,
       message: "Roles fetched successfully",
       data: roles,
     });
-  } catch (error) {
-    res.status(400).json({
-      success: false,
-      message: "Failed to fetch roles",
-      error,
-    });
-  }
+  }),
 };

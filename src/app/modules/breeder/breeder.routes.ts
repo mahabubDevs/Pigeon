@@ -8,11 +8,11 @@ const router = express.Router();
 router
   .route("/")
   .post(auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN), BreederController.createBreeder)
-  .get(auth(USER_ROLES.USER, USER_ROLES.PAIDUSER, USER_ROLES.ADMIN), BreederController.getAllBreeders);
+  .get(auth(USER_ROLES.USER, USER_ROLES.PAIDUSER, USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN), BreederController.getAllBreeders);
 
 router
   .route("/:id")
-  .get(auth(USER_ROLES.USER, USER_ROLES.PAIDUSER, USER_ROLES.ADMIN), BreederController.getBreederById)
+  .get(auth(USER_ROLES.USER, USER_ROLES.PAIDUSER, USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN), BreederController.getBreederById)
   .patch(auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN), BreederController.updateBreeder)
   .delete(auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN), BreederController.deleteBreeder);
 

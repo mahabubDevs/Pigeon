@@ -9,7 +9,7 @@ const breederSchema: Schema<IBreeder> = new Schema(
     country: { type: String },
     email: { type: String, required: true, unique: true },
     phone: { type: String },
-    status: { type: String, default: "Active" },
+    status: { type: Boolean, default: false },
     experience: { type: Number, default: 0 },
     gender: { type: String, enum: ["Male", "Female", "Other"], default: "Other" },
   },

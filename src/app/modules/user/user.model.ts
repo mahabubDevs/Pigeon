@@ -92,7 +92,8 @@ const userSchema = new Schema<IUser, UserModal>(
             currency: {
                 type: String,
             }
-        }
+        },
+        pages: [{ type: String }],
     },
     {
         timestamps: true
