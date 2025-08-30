@@ -81,11 +81,20 @@ if (parsedData.motherRingId) {
 
 
   // Step 2: Handle files
+  // const photos: string[] = [];
+  // if (files) {
+  //   const filesArray: Express.Multer.File[] = Object.values(files).flat() as Express.Multer.File[];
+  //   filesArray.forEach(file => {
+  //     photos.push(file.path.replace(/\\/g, '/'));
+  //   });
+  // }
+
+
   const photos: string[] = [];
   if (files) {
     const filesArray: Express.Multer.File[] = Object.values(files).flat() as Express.Multer.File[];
     filesArray.forEach(file => {
-      photos.push(file.path.replace(/\\/g, '/'));
+      photos.push(`/images/${file.filename}`); // <-- একই format updateProfile এর মতো
     });
   }
 

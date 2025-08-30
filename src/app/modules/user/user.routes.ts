@@ -25,7 +25,7 @@ router
         UserController.createUser
     )
     .patch(
-        auth(USER_ROLES.ADMIN, USER_ROLES.USER, USER_ROLES.PAIDUSER),
+        auth(USER_ROLES.ADMIN, USER_ROLES.USER, USER_ROLES.PAIDUSER, USER_ROLES.SUPER_ADMIN),
         fileUploadHandler(),
         UserController.updateProfile
     );

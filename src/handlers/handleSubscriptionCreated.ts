@@ -71,12 +71,13 @@ export const handleSubscriptionCreated = async (data: Stripe.Subscription) => {
         );
 
          // --- ADD NOTIFICATION ---
-        await NotificationService.createNotificationToDB({
-            text: `Your subscription for ${pricingPlan.title} is now active!`,
-            // type: 'USER',
-            // user: existingUser._id.toString(),
-            read: false,
+       await NotificationService.createNotificationToDB({
+        text: `A new user has subscribed to ${pricingPlan.title}!`,
+        type: 'ADMIN',               
+        read: false,                    
+        referenceId: existingUser._id.toString(), 
         });
+
         
     } catch (error) {
         console.error('Subscription Created Error:', error);
