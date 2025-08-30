@@ -45,4 +45,5 @@ export default {
     authToken: process.env.TWILIO_AUTH_TOKEN,
     twilioNumber: process.env.TWILIO_NUMBER,
   },
+  frontendUrl: process.env.FRONTEND_URL,
 };

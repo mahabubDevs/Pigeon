@@ -15,6 +15,7 @@ interface IAuthenticationProps {
 }
 
 export type IUser = {
+    _id: Types.ObjectId;
     name: string;
     userName?: string;
     appId: string;
@@ -29,6 +30,7 @@ export type IUser = {
     accountInformation?: IStripeAccountInfo;
     stripeAccountId?: string;
     pages?: string[];
+    customeRole?: string;
 }
 
 export type UserModal = {

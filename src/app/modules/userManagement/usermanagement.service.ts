@@ -2,18 +2,82 @@ import { IUser } from "../user/user.interface";
 import { User } from "../user/user.model";
 import ApiError from "../../../errors/ApiErrors";
 import { StatusCodes } from "http-status-codes";
+import bcrypt from "bcrypt";
+import config from "../../../config";
+import {emailHelper }  from "../../../helpers/emailHelper";
 
-/**
- * Create User
- */
-const createUser = async (payload: Partial<IUser>): Promise<IUser> => {
-  const user = await User.create(payload);
+const createUser = async (payload: IUser): Promise<IUser> => {
+  try {
+    // ইউজার তৈরি করা
+    const { name, email, contact, password, role, pages } = payload;
 
-  if (!user) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to create user");
+    // ডুপ্লিকেট ইউজার চেক করা
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, "Email already exists!");
+    }
+
+    // পাসওয়ার্ড হ্যাশিং করা
+    const hashedPassword = await bcrypt.hash(password, Number(config.bcrypt_salt_rounds));
+
+    // ইউজার ক্রিয়েট করা
+    const user = await User.create({
+      name,
+      email,
+      contact,
+      password: hashedPassword,
+      role: role || "USER", // রোল ডিফল্ট USER হবে
+      pages,
+    });
+
+    // রোল কাস্টম রোল হিসেবে অ্যাসাইন করা
+    await assignRole(user._id.toString(), role);
+
+    // পেজ অ্যাক্সেস অ্যাসাইন করা
+    await assignPageAccess(user._id.toString(), pages ?? []);
+
+    // ইমেইল পাঠানো
+    const loginLink = `${config.frontendUrl}/login?userId=${user._id.toString()}`;
+    const emailContent = `
+      <h2>Welcome to Our Platform</h2>
+      <p>Your account has been created successfully.</p>
+      <p><strong>Email:</strong> ${email}</p>
+      <p>Click the link below to login and set your password:${password}</p>
+      <a href="${loginLink}">Login</a>
+    `;
+
+    const emailValues = {
+      to: email,
+      subject: 'Account Created - Login Link',
+      html: emailContent,
+    };
+
+    await emailHelper.sendEmail(emailValues);
+
+    return user;
+  } catch (error) {
+    let errorMessage = "Unknown error";
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    }
+    throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, "Error creating user: " + errorMessage);
   }
+};
 
-  return user;
+// রোল অ্যাসাইন করা
+const assignRole = async (userId: string, role: string) => {
+  const updatedUser = await User.findByIdAndUpdate(userId, { role }, { new: true });
+  if (!updatedUser) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to assign role");
+  }
+};
+
+// পেজ অ্যাক্সেস অ্যাসাইন করা
+const assignPageAccess = async (userId: string, pages: string[]) => {
+  const updatedUser = await User.findByIdAndUpdate(userId, { pages }, { new: true });
+  if (!updatedUser) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to assign page access");
+  }
 };
 
 /**
@@ -68,31 +132,46 @@ const deleteUser = async (id: string): Promise<IUser | null> => {
 /**
  * Assign Role to User
  */
-const assignRole = async (id: string, role: string): Promise<IUser | null> => {
-  const updatedUser = await User.findByIdAndUpdate({ _id: id }, { role }, { new: true });
 
-  if (!updatedUser) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to assign role");
-  }
 
-  return updatedUser;
-};
+// -------------------------
+// 🔹 Assign Role to User
+// -------------------------
 
-/**
- * Assign Page Access to User
- */
-const assignPageAccess = async (
-  id: string,
-  pages: string[]
-): Promise<IUser | null> => {
-  const updatedUser = await User.findByIdAndUpdate({ _id: id }, { pages }, { new: true });
 
-  if (!updatedUser) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to assign page access");
-  }
+// const createUser = async (payload: Partial<IUser>): Promise<IUser> => {
+//   const user = await User.create(payload);
 
-  return updatedUser;
-};
+//   if (!user) {
+//     throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to create user");
+//   }
+
+//   return user;
+// };
+
+
+// const assignRole = async (id: string, role: string): Promise<IUser | null> => {
+//   const updatedUser = await User.findByIdAndUpdate({ _id: id }, { role }, { new: true });
+
+//   if (!updatedUser) {
+//     throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to assign role");
+//   }
+
+//   return updatedUser;
+// };
+
+// // -------------------------
+// // 🔹 Assign Page Access to User
+// // -------------------------
+// const assignPageAccess = async (id: string, pages: string[]): Promise<IUser | null> => {
+//   const updatedUser = await User.findByIdAndUpdate({ _id: id }, { pages }, { new: true });
+
+//   if (!updatedUser) {
+//     throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to assign page access");
+//   }
+
+//   return updatedUser;
+// };
 
 export const UserService = {
   createUser,
@@ -100,6 +179,6 @@ export const UserService = {
   getSingleUser,
   updateUser,
   deleteUser,
-  assignRole,
-  assignPageAccess,
+//   assignRole,
+//   assignPageAccess
 };

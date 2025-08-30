@@ -28,6 +28,11 @@ const userSchema = new Schema<IUser, UserModal>(
             default: USER_ROLES.USER,
             required: false,
         },
+        customeRole:{
+            type: String,
+            required: false,
+            default: null,
+        },
         email: {
             type: String,
             required: false,
@@ -134,6 +139,11 @@ userSchema.pre('save', async function (next) {
         throw new ApiError(StatusCodes.BAD_REQUEST, 'Email already exist!');
     }
   
+     // Assign default userName if it is null
+    if (!this.userName) {
+        this.userName = this.name ? this.name.replace(/\s+/g, '').toLowerCase() : 'user_' + Date.now();
+    }
+    
     //password hash
     this.password = await bcrypt.hash( this.password, Number(config.bcrypt_salt_rounds));
     next();
