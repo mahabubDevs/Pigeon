@@ -6,63 +6,42 @@ import bcrypt from "bcrypt";
 import config from "../../../config";
 import {emailHelper }  from "../../../helpers/emailHelper";
 
-const createUser = async (payload: IUser): Promise<IUser> => {
-  try {
-    // ইউজার তৈরি করা
-    const { name, email, contact, password, role, pages } = payload;
 
-    // ডুপ্লিকেট ইউজার চেক করা
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      throw new ApiError(StatusCodes.BAD_REQUEST, "Email already exists!");
-    }
 
-    // পাসওয়ার্ড হ্যাশিং করা
-    const hashedPassword = await bcrypt.hash(password, Number(config.bcrypt_salt_rounds));
-
-    // ইউজার ক্রিয়েট করা
-    const user = await User.create({
-      name,
-      email,
-      contact,
-      password: hashedPassword,
-      role: role || "USER", // রোল ডিফল্ট USER হবে
-      pages,
+const createUser = async (payload: Partial<IUser>): Promise<IUser> => {
+    // 1. Create user with auto verified
+    const createUser = await User.create({
+        ...payload,
+        verified: true,   // auto verified
     });
 
-    // রোল কাস্টম রোল হিসেবে অ্যাসাইন করা
-    await assignRole(user._id.toString(), role);
-
-    // পেজ অ্যাক্সেস অ্যাসাইন করা
-    await assignPageAccess(user._id.toString(), pages ?? []);
-
-    // ইমেইল পাঠানো
-    const loginLink = `${config.frontendUrl}/login?userId=${user._id.toString()}`;
-    const emailContent = `
-      <h2>Welcome to Our Platform</h2>
-      <p>Your account has been created successfully.</p>
-      <p><strong>Email:</strong> ${email}</p>
-      <p>Click the link below to login and set your password:${password}</p>
-      <a href="${loginLink}">Login</a>
-    `;
-
-    const emailValues = {
-      to: email,
-      subject: 'Account Created - Login Link',
-      html: emailContent,
-    };
-
-    await emailHelper.sendEmail(emailValues);
-
-    return user;
-  } catch (error) {
-    let errorMessage = "Unknown error";
-    if (error instanceof Error) {
-      errorMessage = error.message;
+    if (!createUser) {
+        throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to create user');
     }
-    throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, "Error creating user: " + errorMessage);
-  }
+
+    // 2. Send email with credentials
+    const emailContent = `
+        Hi ${createUser.name || createUser.userName},
+        Your account has been created.
+        Email: ${createUser.email}
+        Password: ${payload.password}   // user provided password
+    `;
+    await emailHelper.sendEmail({
+        to: createUser.email!,
+        subject: "Your account credentials",
+        html: emailContent
+    });
+
+    // 3. Admin notification
+    // await NotificationService.createNotificationToDB({
+    //     text: `New user registered: ${createUser.name}`,
+    //     type: 'ADMIN',
+    //     read: false
+    // });
+
+    return createUser;
 };
+
 
 // রোল অ্যাসাইন করা
 const assignRole = async (userId: string, role: string) => {
@@ -179,6 +158,7 @@ export const UserService = {
   getSingleUser,
   updateUser,
   deleteUser,
+
 //   assignRole,
 //   assignPageAccess
 };

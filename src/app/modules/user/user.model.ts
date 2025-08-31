@@ -140,9 +140,7 @@ userSchema.pre('save', async function (next) {
     }
   
      // Assign default userName if it is null
-    if (!this.userName) {
-        this.userName = this.name ? this.name.replace(/\s+/g, '').toLowerCase() : 'user_' + Date.now();
-    }
+   
     
     //password hash
     this.password = await bcrypt.hash( this.password, Number(config.bcrypt_salt_rounds));

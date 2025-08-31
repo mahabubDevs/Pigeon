@@ -12,18 +12,20 @@ import { User } from "../user/user.model";
 // -------------------------
 // 🔹 Create User (Register)
 // -------------------------
+
+
 const createUser = catchAsync(async (req: Request, res: Response) => {
-  const result = await UserService.createUser(req.body);
+    const userData = req.body;
+    const result = await UserService.createUser(userData);
 
-  
-
-  sendResponse(res, {
-    success: true,
-    statusCode: StatusCodes.CREATED,
-    message: "User created successfully",
-    data: result,
-  });
+    sendResponse(res, {
+        success: true,
+        statusCode: StatusCodes.OK,
+        message: 'User created successfully. Check email for credentials.',
+    });
 });
+
+
 
 // -------------------------
 // 🔹 Get All Users (Admin)
@@ -160,5 +162,6 @@ export const UserController = {
   getSingleUser,
   updateUser,
   deleteUser,
+ 
 //   createUserAndSendEmail
 };

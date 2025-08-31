@@ -5,13 +5,14 @@ import { PackageController } from "./package.controller";
 import validateRequest from "../../middlewares/validateRequest";
 import { PackageValidation } from "./package.validation";
 import fileUploadHandler from "../../middlewares/fileUploaderHandler";
+import { authWithPageAccess } from "../../middlewares/authWithPageAccess";
 const router = express.Router()
 
 router
     .route("/")
     .post(
         fileUploadHandler(), 
-        auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.ADMIN), 
+        authWithPageAccess('package'), 
         validateRequest(PackageValidation.createPackageZodSchema), 
         PackageController.createPackage
     )
