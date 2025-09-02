@@ -30,6 +30,9 @@ router
       auth( USER_ROLES.PAIDUSER),
       PigeonController.importPigeons
     );
+router
+  .route("/search")
+  .get(PigeonController.searchPigeonsByName);
 
 router
     .route("/:id")

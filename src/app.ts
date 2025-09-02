@@ -9,17 +9,14 @@ import session from "express-session";
 //  SubscriptionRoutes import 
 import handleStripeWebhook from "./helpers/handleStripeWebhook";
 
-
 const app = express();
 
 // ⚡️ Stripe webhook route must be before json parser
-// app.use("/api/v1/subscription", handleStripeWebhook);
 app.post(
   '/api/v1/subscription/webhook',
   express.raw({ type: 'application/json' }), // raw body
   handleStripeWebhook
 );
-
 
 // morgan
 app.use(Morgan.successHandler);
@@ -42,6 +39,17 @@ app.use(
     cookie: { secure: false }, // production a HTTPS should be true
   })
 );
+
+// 🔹 Worker PID logging middleware
+app.use((req: Request, res: Response, next) => {
+  const start = Date.now();
+  res.on("finish", () => {
+    console.log(
+      `[Worker ${process.pid}] ${req.method} ${req.originalUrl} -> ${res.statusCode} (${Date.now() - start}ms)`
+    );
+  });
+  next();
+});
 
 // router
 app.use("/api/v1", router);

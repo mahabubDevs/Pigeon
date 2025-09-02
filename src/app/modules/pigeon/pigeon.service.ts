@@ -478,7 +478,17 @@ const getMyPigeonsFromDB = async (
 };
 
 
+const searchPigeonsByNameFromDB = async (query: string) => {
 
+  const pigeons = await Pigeon.find(
+    { 
+      name: { $regex: query, $options: "i" }, 
+      status: { $ne: "Deleted" } 
+    }
+  ).select("_id name"); 
+
+  return pigeons;
+};
 
 
 
@@ -492,5 +502,6 @@ export const PigeonService = {
   getSiblings,
   importFromExcel,
   exportToPDF,
-  getMyPigeonsFromDB
+  getMyPigeonsFromDB,
+  searchPigeonsByNameFromDB
 };

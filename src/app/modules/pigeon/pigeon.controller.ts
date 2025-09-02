@@ -149,6 +149,22 @@ const getMyPigeons = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const searchPigeonsByName = catchAsync(async (req: Request, res: Response) => {
+  const { q } = req.query; // frontend থেকে ?q=abc আসবে
+
+  if (!q || typeof q !== "string") {
+    throw new ApiError(StatusCodes.BAD_REQUEST, "Query param ?q required");
+  }
+
+  const result = await PigeonService.searchPigeonsByNameFromDB(q);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Pigeons search result",
+    data: result,
+  });
+});
 
 
 
@@ -162,5 +178,6 @@ export const PigeonController = {
   getSiblingsController,
   importPigeons,
   exportPigeonsPDF,
-  getMyPigeons
+  getMyPigeons,
+  searchPigeonsByName
 };

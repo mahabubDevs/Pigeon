@@ -6,8 +6,10 @@ import colors from "colors";
 import { socketHelper } from "./helpers/socketHelper";
 import { Server } from "socket.io";
 import seedSuperAdmin from "./DB";
+import cluster from "cluster";
+import os from "os";
 
-//uncaught exception
+// uncaught exception
 process.on("uncaughtException", (error) => {
   errorLogger.error("uncaughtException Detected", error);
   process.exit(1);
@@ -17,11 +19,10 @@ let server: any;
 
 async function main() {
   try {
-    // remove cluster fromt his code
     // create super admin
     seedSuperAdmin();
 
-    mongoose.connect(config.database_url as string);
+    await mongoose.connect(config.database_url as string);
     logger.info(colors.green("🚀 Database connected successfully"));
 
     const port =
@@ -29,26 +30,27 @@ async function main() {
 
     server = app.listen(port, config.ip_address as string, () => {
       logger.info(
-        colors.yellow(`♻️  Application listening on port:${config.port}`)
+        colors.yellow(
+          `♻️  Worker ${process.pid} listening on port:${config.port}`
+        )
       );
     });
-    //socket
+
+    // socket.io
     const io = new Server(server, {
       pingTimeout: 60000,
-      cors: {
-        origin: "*",
-      },
+      cors: { origin: "*" },
     });
 
     socketHelper.socket(io);
     //@ts-ignore
     global.io = io;
   } catch (error) {
-    errorLogger.error(colors.red("🤢 Failed to connect Database"));
+    errorLogger.error(colors.red("🤢 Failed to connect Database"), error);
     process.exit(1);
   }
 
-  //handle unhandledRejection
+  // handle unhandledRejection
   process.on("unhandledRejection", (error) => {
     if (server) {
       server.close(() => {
@@ -61,12 +63,31 @@ async function main() {
   });
 }
 
-main();
+// clustering logic
+const numCPUs = os.cpus().length;
 
-//SIGTERM
+if (cluster.isPrimary) {
+  logger.info(colors.cyan(`Master process is running. PID: ${process.pid}`));
+
+  // Fork workers
+  for (let i = 0; i < numCPUs; i++) {
+    cluster.fork();
+  }
+
+  // Restart worker if it dies
+  cluster.on("exit", (worker, code, signal) => {
+    logger.error(
+      `Worker ${worker.process.pid} died (code: ${code}, signal: ${signal}). Forking a new worker...`
+    );
+    cluster.fork();
+  });
+} else {
+  // Worker runs the main server
+  main();
+}
+
+// SIGTERM
 process.on("SIGTERM", () => {
   logger.info("SIGTERM IS RECEIVE");
-  if (server) {
-    server.close();
-  }
+  if (server) server.close();
 });

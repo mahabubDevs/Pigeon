@@ -11,6 +11,7 @@ import { UserManagementRoutes } from '../modules/userManagement/usermanagement.r
 import { NotificationRoutes } from '../modules/notification/notification.routes';
 import { DashboardRoutes } from '../modules/dashbordOverview/dashboard.routes';
 import { AnalyticRoutes } from '../modules/analytics/analytic.route';
+import { UserSubscriptionRoutes } from '../modules/userEmailSubscripton/userEmailSubscripton.routes';
 
 const router = express.Router();
 
@@ -26,6 +27,7 @@ const apiRoutes = [
     { path: "/notification", route: NotificationRoutes },
     { path: "/overview", route: DashboardRoutes },
     { path: "/analytic", route:  AnalyticRoutes },
+    {path: "/user-subscription", route: UserSubscriptionRoutes},  // new user subscription route added
 
 ]
 
