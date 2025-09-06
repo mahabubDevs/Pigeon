@@ -7,10 +7,10 @@ export const DashboardService = {
     const totalPigeons = await Pigeon.countDocuments();
 
     //  Verified pigeons
-    const verifiedPigeons = await Pigeon.countDocuments({ status: "Verified" });
+    const verifiedPigeons = await Pigeon.countDocuments({ verified: true });
 
     // 
-    const iconPigeons = await Pigeon.countDocuments({ isIcon: true });
+    const iconPigeons = await Pigeon.countDocuments({ iconic: true });
 
     // ✅ Subscription revenue (total amountPaid sum)
     const subscriptionRevenueAgg = await Subscription.aggregate([

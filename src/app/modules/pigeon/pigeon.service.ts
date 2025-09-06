@@ -167,7 +167,7 @@ const getAllPigeonsFromDB = async (
 
   const pagination = await qb.getPaginationInfo();
 
-  return { data, pagination };
+  return { pagination ,data  };
 };
 
 // Get Single Pigeon Details
@@ -190,18 +190,40 @@ const getPigeonDetailsFromDB = async (id: string): Promise<IPigeon | null> => {
 };
 
 const getMyAllPigeonDetailsFromDB = async (
-  userId: string
-): Promise<IPigeon[]> => {
-  const result = await Pigeon.find({ user: userId })
-    .populate("user")
+  userId: string,
+  query: any
+): Promise<{ data: IPigeon[]; pagination: any }> => {
+  // Step 1: Base query (only this user's pigeons, Deleted skip)
+  let baseQuery = Pigeon.find({
+    user: userId,
+    status: { $ne: "Deleted" },
+  });
 
-    .lean();
+  const qb = new QueryBuilder<IPigeon>(baseQuery, query);
 
-  if (!result || result.length === 0) {
+  qb.search(["ringNumber", "name", "country", "breeder"])
+    .filter()
+    .sort()
+    .paginate()
+    .fields()
+    .populate(["user", "fatherRingId", "motherRingId"], {
+      user: "name email",
+      fatherRingId: "ringNumber name",
+      motherRingId: "ringNumber name",
+    });
+
+  // Execute query
+  const dataRaw = await qb.modelQuery.lean();
+
+  const data: IPigeon[] = dataRaw as unknown as IPigeon[];
+
+  const pagination = await qb.getPaginationInfo();
+
+  if (!data || data.length === 0) {
     throw new ApiError(StatusCodes.NOT_FOUND, "No pigeons found for this user");
   }
 
-  return result;
+  return {pagination, data };
 };
 
 // Delete Pigeon (soft delete: set status = "Deleted")

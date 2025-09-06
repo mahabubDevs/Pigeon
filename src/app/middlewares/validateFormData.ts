@@ -25,13 +25,13 @@ export const validateFormData = (schema: ZodSchema) => {
         throw new ApiError(StatusCodes.UNSUPPORTED_MEDIA_TYPE, "Unsupported content type");
       }
 
-      // 3️⃣ File থেকে photos attach করা
+      //  Boolean conversion
       if (req.files) {
         const filesArray: Express.Multer.File[] = Object.values(req.files).flat() as Express.Multer.File[];
         parsedData.photos = filesArray.map(file => `/images/${file.filename}`);
       }
 
-      // 4️⃣ photos যদি খালি থাকে, তখন empty array
+      // Ensure photos is an array
       if (!parsedData.photos) parsedData.photos = [];
 
       // 5️⃣ Numeric conversion

@@ -17,11 +17,11 @@ export const createPigeonZodSchema = z.object({
   pattern: z.string().optional(),
   racherRating: z.preprocess(
     val => (val !== undefined && val !== "" ? Number(val) : undefined),
-    z.number({ required_error: "Racher Rating is required" }).min(0).max(10)
+    z.number({ required_error: "Racher Rating is required" }).min(0).max(100)
   ),
   breederRating: z.preprocess(
     val => (val !== undefined && val !== "" ? Number(val) : undefined),
-    z.number({ required_error: "Breeder Rating is required" }).min(0).max(10)
+    z.number({ required_error: "Breeder Rating is required" }).min(0).max(100)
   ),
   gender: z.enum(["Male", "Female", "Unknown"], { required_error: "Gender is required" }),
   status: z.string({ required_error: "Status is required" }),

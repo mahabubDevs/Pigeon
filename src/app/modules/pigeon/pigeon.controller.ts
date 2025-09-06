@@ -155,7 +155,7 @@ const getMyAllPigeons = catchAsync(async (req: Request, res: Response) => {
     throw new ApiError(StatusCodes.UNAUTHORIZED, "User not authenticated");
   }
 
-  const result = await PigeonService.getMyAllPigeonDetailsFromDB(user._id);
+  const result = await PigeonService.getMyAllPigeonDetailsFromDB(user._id, req.query);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,

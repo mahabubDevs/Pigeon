@@ -81,6 +81,7 @@ const getUserProfileFromDB = async (user: JwtPayload): Promise<Partial<IUser> & 
 
     return {
         ...isExistUser.toObject(), // mongoose document to plain object
+        // contact: isExistUser.contact,
         totalPigeons
     };
 };
