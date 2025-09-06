@@ -14,9 +14,9 @@ const userSchema = new Schema<IUser, UserModal>(
         },
         userName: {
             type: String,
-            required: false,
-            unique: true,
-            lowercase: true,
+            required: true,
+            unique: false,
+            lowercase: false,
         },
         appId: {
             type: String,

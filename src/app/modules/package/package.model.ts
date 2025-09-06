@@ -25,20 +25,18 @@ const packageSchema = new Schema<IPackage, PackageModel>(
             enum: ['Monthly', 'Yearly'],
             required: true
         },
+        features: [{ type: String, required: true }],
         // Stripe product ID (prod_xxx)
         productId: {
             type: String,
             required: true
         },
-        // Stripe price ID (price_xxx) -> এইটা সাবস্ক্রিপশনের জন্য লাগবে
+        // Stripe price ID ( price_xxx ) for recurring billing
         priceId: {
             type: String,
             required: true
         },
-        credit: {
-            type: Number,
-            required: true
-        },
+       
         loginLimit: {
             type: Number,
             required: true

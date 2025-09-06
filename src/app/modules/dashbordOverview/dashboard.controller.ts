@@ -6,7 +6,7 @@ import { DashboardService } from "./dashboard.service";
 import { Subscription } from "../subscription/subscription.model";
 
 export const DashboardController = {
-  // 📊 Dashboard Stats
+  //  Dashboard Stats
   getDashboardStats: catchAsync(async (req: Request, res: Response) => {
     const stats = await DashboardService.getDashboardStats();
 
@@ -29,7 +29,7 @@ export const DashboardController = {
             year: { $year: "$createdAt" },
             month: { $month: "$createdAt" },
           },
-          totalRevenue: { $sum: "$price" }, // যদি "amountPaid" field থাকে, এটাকে change করো
+          totalRevenue: { $sum: "$price" }, // 
         },
       },
 

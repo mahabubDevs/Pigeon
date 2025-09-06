@@ -6,9 +6,9 @@ import { authWithPageAccess } from "../../middlewares/authWithPageAccess";
 
 const router = express.Router();
 
-// --------------------
-// 🔹 User CRUD (Admin Only)
-// --------------------
+
+//  User CRUD Admin Only
+
 router
   .route("/")
   .post(
@@ -36,9 +36,7 @@ router
     UserController.deleteUser
   );
 
-// --------------------
-// 🔹 Role & Page Access Management
-// --------------------
+
 
 export const UserManagementRoutes = router;
 

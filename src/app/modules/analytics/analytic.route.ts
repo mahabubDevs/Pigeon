@@ -6,7 +6,7 @@ import { authWithPageAccess } from "../../middlewares/authWithPageAccess";
 
 const router = Router();
 
-// GET /api/dashboard?year=2025&month=8&dataTypes=revenue,userActivity
+// Admin and page access holder
 router.get("/", authWithPageAccess('analytics'), DashboardController.getDashboardData);
 router.get(
   "/export-excel",

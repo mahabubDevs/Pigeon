@@ -3,6 +3,9 @@ import auth from "../../middlewares/auth";
 import { USER_ROLES } from "../../../enums/user";
 import { PigeonController } from "./pigeon.controller";
 import fileUploadHandler from "../../middlewares/fileUploaderHandler";
+// import { PigeonValidation } from "./pigeon.validation";
+import { validateFormData } from "../../middlewares/validateFormData";
+import { createPigeonZodSchema } from "./pigeon.validation";
 
 
 
@@ -13,7 +16,7 @@ router
     .post(
         fileUploadHandler(), 
         auth( USER_ROLES.USER, USER_ROLES.PAIDUSER, USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN), 
-      
+        validateFormData(createPigeonZodSchema),
         PigeonController.createPigeon 
     )
     .get(PigeonController.getAllPigeons)
@@ -33,6 +36,10 @@ router
 router
   .route("/search")
   .get(PigeonController.searchPigeonsByName);
+ router
+  .route('/myAllpigeons')
+  
+  .get( auth(USER_ROLES.USER, USER_ROLES.PAIDUSER,USER_ROLES.ADMIN,USER_ROLES.SUPER_ADMIN), PigeonController.getMyAllPigeons);
 
 router
     .route("/:id")

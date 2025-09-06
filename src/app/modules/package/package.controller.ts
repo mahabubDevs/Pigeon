@@ -3,23 +3,40 @@ import catchAsync from "../../../shared/catchAsync";
 import { PackageService } from "./package.service";
 import sendResponse from "../../../shared/sendResponse";
 import { StatusCodes } from "http-status-codes";
+import ApiError from "../../../errors/ApiErrors";
 
-const createPackage = catchAsync(async(req: Request, res: Response)=>{
-    
-     const payload = {
+
+
+
+
+const createPackage = catchAsync(async (req: Request, res: Response) => {
+  const { title, features } = req.body;
+
+  if (!title || title.trim() === "") {
+    throw new ApiError(StatusCodes.BAD_REQUEST, "Title is required");
+  }
+
+  if (!features || !Array.isArray(features) || features.length === 0) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, "Features field is required and must be a non-empty array");
+  }
+
+  const payload = {
     ...req.body,
-    admin: req.user._id,  // <-- এখানে auth middleware থেকে set করা user id
+    admin: (req.user as any)?._id,
   };
 
-    const result = await PackageService.createPackageToDB(payload);
+  console.log("Payload before DB save:", payload);
 
-    sendResponse(res, {
-        statusCode: StatusCodes.OK,
-        success: true,
-        message: "Package created Successfully",
-        data: result
-    })
-})
+  const result = await PackageService.createPackageToDB(payload);
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: "Package created Successfully",
+    data: result,
+  });
+});
+
 
 const updatePackage = catchAsync(async(req: Request, res: Response)=>{
     const result = await PackageService.updatePackageToDB(req.params.id, req.body);

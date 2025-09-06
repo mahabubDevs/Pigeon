@@ -56,6 +56,9 @@ const resetPassword = catchAsync(async (req: Request, res: Response) => {
 
 const changePassword = catchAsync(async (req: Request, res: Response) => {
     const user = req.user;
+    if (!user) {
+        throw new Error("User not authenticated");
+    }
     console.log("Step 1: User data", user);
     const { ...passwordData } = req.body;
     await AuthService.changePasswordToDB(user, passwordData);
@@ -105,6 +108,9 @@ const resendVerificationEmail = catchAsync(async (req: Request, res: Response) =
 
 // delete user
 const deleteUser = catchAsync(async (req: Request, res: Response) => {
+    if (!req.user) {
+        throw new Error("User not authenticated");
+    }
     const result = await AuthService.deleteUserFromDB(req.user, req.body.password);
 
     sendResponse(res, {

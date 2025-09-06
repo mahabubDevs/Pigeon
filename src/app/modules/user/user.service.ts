@@ -9,6 +9,7 @@ import { emailTemplate } from "../../../shared/emailTemplate";
 import { emailHelper } from "../../../helpers/emailHelper";
 import unlinkFile from "../../../shared/unlinkFile";
 import { NotificationService } from "../notification/notification.service";
+import { Pigeon } from "../pigeon/pigeon.model";
 
 const createAdminToDB = async (payload: any): Promise<IUser> => {
 
@@ -66,14 +67,24 @@ const createUserToDB = async (payload: Partial<IUser>): Promise<IUser> => {
     return createUser;
 };
 
-const getUserProfileFromDB = async (user: JwtPayload): Promise<Partial<IUser>> => {
-    const { id } = user;
-    const isExistUser: any = await User.isExistUserById(id);
+const getUserProfileFromDB = async (user: JwtPayload): Promise<Partial<IUser> & { totalPigeons: number }> => {
+    const { _id } = user;
+
+    // Check if user exists
+    const isExistUser: any = await User.isExistUserById(_id);
     if (!isExistUser) {
         throw new ApiError(StatusCodes.BAD_REQUEST, "User doesn't exist!");
     }
-    return isExistUser;
+
+    // Count total pigeons created by this user
+    const totalPigeons = await Pigeon.countDocuments({ createdBy: _id });
+
+    return {
+        ...isExistUser.toObject(), // mongoose document to plain object
+        totalPigeons
+    };
 };
+
 
 const updateProfileToDB = async (user: JwtPayload, payload: Partial<IUser>): Promise<Partial<IUser | null>> => {
     const { _id } = user;

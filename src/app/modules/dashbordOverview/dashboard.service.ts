@@ -3,13 +3,13 @@ import { Subscription } from "../subscription/subscription.model";
 
 export const DashboardService = {
   getDashboardStats: async () => {
-    // ✅ Total pigeons
+    //  Total pigeons
     const totalPigeons = await Pigeon.countDocuments();
 
-    // ✅ Verified pigeons
+    //  Verified pigeons
     const verifiedPigeons = await Pigeon.countDocuments({ status: "Verified" });
 
-    // ✅ Icon pigeons (ধরি `isIcon: true` flag আছে)
+    // 
     const iconPigeons = await Pigeon.countDocuments({ isIcon: true });
 
     // ✅ Subscription revenue (total amountPaid sum)

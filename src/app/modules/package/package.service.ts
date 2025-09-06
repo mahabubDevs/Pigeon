@@ -38,7 +38,7 @@ const createPackageToDB = async (payload: IPackage): Promise<IPackage | null> =>
     const existingPrices = await stripe.prices.list({ product: product.productId });
     let price: Stripe.Price;
     if (existingPrices.data.length > 0) {
-        price = existingPrices.data[0]; // যদি আগে থাকে, reuse কর
+        price = existingPrices.data[0]; // if exists, use the first one
         console.log("Using existing Stripe price:", price.id);
     } else {
         price = await stripe.prices.create({

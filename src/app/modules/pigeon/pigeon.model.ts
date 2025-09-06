@@ -18,9 +18,10 @@ const pigeonSchema: Schema<IPigeon> = new Schema(
     },
     country: {
       type: String,
-    },
+      required: true,    },
     birthYear: {
       type: Number,
+      required: true,
     },
     shortInfo: {
       type: String,
@@ -34,7 +35,7 @@ const pigeonSchema: Schema<IPigeon> = new Schema(
     pattern: {
       type: String,
     },
-    racherRating: {
+    racingRating: {
       type: Number,
       default: 0,
     },
@@ -53,7 +54,7 @@ const pigeonSchema: Schema<IPigeon> = new Schema(
     location: {
       type: String,
     },
-    racingRating: {
+    racerRating: {
       type: Number,
       default: 0,
     },
@@ -75,6 +76,10 @@ const pigeonSchema: Schema<IPigeon> = new Schema(
     motherRingId: {
       type: Schema.Types.ObjectId,
       ref: "Pigeon",
+    },
+    catagory: {
+      type: String,
+      default: "Other",
     },
 
     // only can field use admin 

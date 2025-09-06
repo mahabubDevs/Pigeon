@@ -4,137 +4,89 @@ import { IPigeon } from "./pigeon.interface";
 import { Pigeon } from "./pigeon.model";
 import mongoose from "mongoose";
 // import    from "../../../helpers/pdfHelper";
-import XLSX from 'xlsx';
+import XLSX from "xlsx";
 import QueryBuilder from "../../../util/queryBuilder";
 import pdfDoc from "../../../helpers/pdfHelper";
 import { NotificationService } from "../notification/notification.service";
+import { userEmailSubscripton } from "../userEmailSubscripton/userEmailSubscripton.model";
+import { emailHelper } from "../../../helpers/emailHelper";
+import { JwtPayload } from "jsonwebtoken";
+import { USER_ROLES } from "../../../enums/user";
 
-/**
- * Create Pigeon in DB
- */
-
-
-
-
-const createPigeonToDB = async (data: any, files: any, user: any): Promise<IPigeon> => {
-  if (!data) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, "Data field is required");
-  }
-  if (!user || !user._id) {
-    throw new ApiError(StatusCodes.UNAUTHORIZED, "User not authenticated");
-  }
+// Create Pigeon in DB
 
 
- // Free user validation
-  if (user.role === 'USER') {
+const createPigeonToDB = async (data: any, files: any, user: any) => {
+  if (!data) throw new ApiError(StatusCodes.BAD_REQUEST, "Data field is required");
+  if (!user?._id) throw new ApiError(StatusCodes.UNAUTHORIZED, "User not authenticated");
+
+  // Free user validation
+  if (user.role === "USER") {
     const pigeonCount = await Pigeon.countDocuments({ user: user._id });
-    if (pigeonCount >= 50) {
+    if (pigeonCount >= 50)
       throw new ApiError(StatusCodes.FORBIDDEN, "Free users can only add up to 50 pigeons");
-    }
   }
 
-  // Step 1: Parse JSON
-  let parsedData: any;
-  try {
-    parsedData = JSON.parse(data);
-  } catch (err) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, "Data must be valid JSON");
-  }
+  const parsedData = { ...data };
 
-  // Free user restriction on certain fields
+  // Numeric conversion
+  ["birthYear", "racingRating", "racherRating", "breederRating"].forEach(field => {
+    if (parsedData[field] !== undefined) parsedData[field] = Number(parsedData[field]);
+  });
 
-  if (user.role !== "ADMIN" && user.role !== "SUPER_ADMIN") {
+  // Free user restrictions
+  if (!["ADMIN", "SUPER_ADMIN"].includes(user.role)) {
     parsedData.verified = false;
     parsedData.iconic = false;
     parsedData.iconicScore = 0;
   }
 
-
-   // Step 2: Validate father/mother ring IDs
+  // Father/Mother Ring
   if (parsedData.fatherRingId) {
     const father = await Pigeon.findOne({ ringNumber: parsedData.fatherRingId });
-    if (!father) throw new ApiError(StatusCodes.BAD_REQUEST, "Father pigeon not found in DB");
+    if (!father) throw new ApiError(StatusCodes.BAD_REQUEST, "Father pigeon not found");
+    parsedData.fatherRingId = father._id;
   }
 
   if (parsedData.motherRingId) {
     const mother = await Pigeon.findOne({ ringNumber: parsedData.motherRingId });
-    if (!mother) throw new ApiError(StatusCodes.BAD_REQUEST, "Mother pigeon not found in DB");
+    if (!mother) throw new ApiError(StatusCodes.BAD_REQUEST, "Mother pigeon not found");
+    parsedData.motherRingId = mother._id;
   }
 
-
-
-// --- ADD THIS BEFORE MERGE PAYLOAD ---
-
-if (parsedData.fatherRingId) {
-  const father = await Pigeon.findOne({ ringNumber: parsedData.fatherRingId });
-  if (!father) throw new ApiError(StatusCodes.BAD_REQUEST, "Father pigeon not found");
-  parsedData.fatherRingId = father._id; // ObjectId হিসেবে set
-}
-
-if (parsedData.motherRingId) {
-  const mother = await Pigeon.findOne({ ringNumber: parsedData.motherRingId });
-  if (!mother) throw new ApiError(StatusCodes.BAD_REQUEST, "Mother pigeon not found");
-  parsedData.motherRingId = mother._id; // ObjectId হিসেবে set
-}
-
-
-
-
-  // Step 2: Handle files
-  // const photos: string[] = [];
-  // if (files) {
-  //   const filesArray: Express.Multer.File[] = Object.values(files).flat() as Express.Multer.File[];
-  //   filesArray.forEach(file => {
-  //     photos.push(file.path.replace(/\\/g, '/'));
-  //   });
-  // }
-
-
+  // Handle photos
   const photos: string[] = [];
   if (files) {
     const filesArray: Express.Multer.File[] = Object.values(files).flat() as Express.Multer.File[];
-    filesArray.forEach(file => {
-      photos.push(`/images/${file.filename}`); // <-- একই format updateProfile এর মতো
-    });
+    filesArray.forEach(file => photos.push(`/images/${file.filename}`));
   }
+  parsedData.photos = photos;
 
-  // Step 3: Merge payload
-  const payload: IPigeon = {
-    ...parsedData,
-    photos,
-    user: user._id
-  };
-
-  // Step 4: Save DB
+  // Save to DB
+  const payload = { ...parsedData, user: user._id };
   const result = await Pigeon.create(payload);
-  if (!result) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to create pigeon");
-  }
+  if (!result) throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to create pigeon");
 
-
+  // Notification
   await NotificationService.createNotificationToDB({
     text: `New pigeon added by ${user.name}`,
-    type: 'ADMIN',
-    // screen: 'POST',            // optional, context
+    type: "ADMIN",
     referenceId: result._id.toString(),
-    read: false
+    read: false,
   });
-
 
   return result;
 };
 
 
-/**
- * Update Pigeon in DB
- */
+
 
 const updatePigeonToDB = async (
   pigeonId: string,
   data: any,
   files: any,
   deletedIndexes: number[],
-  user: any 
+  user: any
 ): Promise<IPigeon> => {
   const pigeon = await Pigeon.findById(pigeonId);
   if (!pigeon) {
@@ -160,49 +112,51 @@ const updatePigeonToDB = async (
   // Step 2: Remove images according to deletedIndexes
   let currentPhotos = pigeon.photos || [];
   if (deletedIndexes.length > 0) {
-    currentPhotos = currentPhotos.filter((_, idx) => !deletedIndexes.includes(idx));
+    currentPhotos = currentPhotos.filter(
+      (_, idx) => !deletedIndexes.includes(idx)
+    );
   }
 
   // Step 3: Add new uploaded files
   if (files) {
-    const filesArray: Express.Multer.File[] = Object.values(files).flat() as Express.Multer.File[];
-    const newPhotos = filesArray.map(file => file.path.replace(/\\/g, '/'));
+    const filesArray: Express.Multer.File[] = Object.values(
+      files
+    ).flat() as Express.Multer.File[];
+    const newPhotos = filesArray.map((file) => file.path.replace(/\\/g, "/"));
     currentPhotos = currentPhotos.concat(newPhotos);
   }
 
   // Step 4: Merge payload
   const payload: Partial<IPigeon> = {
     ...parsedData,
-    photos: currentPhotos
+    photos: currentPhotos,
   };
 
   // Step 5: Update DB
-  const updatedPigeon = await Pigeon.findByIdAndUpdate(pigeonId, payload, { new: true });
+  const updatedPigeon = await Pigeon.findByIdAndUpdate(pigeonId, payload, {
+    new: true,
+  });
   return updatedPigeon!;
 };
 
-/**
- * Get All Pigeons
- */
-/**
- * Get all pigeons with pagination, filter, and sort
- *  @param query- req.query object from request
- */
+// Get All Pigeons
 
-const getAllPigeonsFromDB = async (query: any): Promise<{ data: IPigeon[]; pagination: any }> => {
-  let baseQuery = Pigeon.find({ status: { $ne: 'Deleted' } });
+const getAllPigeonsFromDB = async (
+  query: any
+): Promise<{ data: IPigeon[]; pagination: any }> => {
+  let baseQuery = Pigeon.find({ status: { $ne: "Deleted" } });
 
   const qb = new QueryBuilder<IPigeon>(baseQuery, query);
 
-  qb.search(['ringNumber', 'name', 'country', 'breeder'])
+  qb.search(["ringNumber", "name", "country", "breeder"])
     .filter()
     .sort()
     .paginate()
     .fields()
-    .populate(['user', 'fatherRingId', 'motherRingId'], {
-      user: 'name email',
-      fatherRingId: 'ringNumber name',
-      motherRingId: 'ringNumber name',
+    .populate(["user", "fatherRingId", "motherRingId"], {
+      user: "name email",
+      fatherRingId: "ringNumber name",
+      motherRingId: "ringNumber name",
     });
 
   // Execute query
@@ -216,19 +170,17 @@ const getAllPigeonsFromDB = async (query: any): Promise<{ data: IPigeon[]; pagin
   return { data, pagination };
 };
 
+// Get Single Pigeon Details
 
-
-
-
-/**
- * Get Single Pigeon Details
- */
 const getPigeonDetailsFromDB = async (id: string): Promise<IPigeon | null> => {
   if (!mongoose.Types.ObjectId.isValid(id)) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid ID");
   }
 
-  const result = await Pigeon.findById(id).populate("user").populate("fatherRingId").populate("motherRingId");
+  const result = await Pigeon.findById(id)
+    .populate("user")
+    .populate("fatherRingId")
+    .populate("motherRingId");
 
   if (!result) {
     throw new ApiError(StatusCodes.NOT_FOUND, "Pigeon not found");
@@ -237,9 +189,23 @@ const getPigeonDetailsFromDB = async (id: string): Promise<IPigeon | null> => {
   return result;
 };
 
-/**
- * Delete Pigeon (soft delete: set status = "Deleted")
- */
+const getMyAllPigeonDetailsFromDB = async (
+  userId: string
+): Promise<IPigeon[]> => {
+  const result = await Pigeon.find({ user: userId })
+    .populate("user")
+
+    .lean();
+
+  if (!result || result.length === 0) {
+    throw new ApiError(StatusCodes.NOT_FOUND, "No pigeons found for this user");
+  }
+
+  return result;
+};
+
+// Delete Pigeon (soft delete: set status = "Deleted")
+
 const deletePigeonFromDB = async (id: string): Promise<IPigeon | null> => {
   if (!mongoose.Types.ObjectId.isValid(id)) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid ID");
@@ -258,16 +224,13 @@ const deletePigeonFromDB = async (id: string): Promise<IPigeon | null> => {
   return result;
 };
 
-
+// Get Pigeon with family members (parents) up to a certain depth
 const getPigeonWithFamily = async (pigeonId: string, maxDepth = 5) => {
-
-  // Recursive function to populate family
   const populateFamily = async (pigeon: any, depth = 0): Promise<any> => {
     if (!pigeon || depth >= maxDepth) return pigeon;
 
     const populatedPigeonRaw = await Pigeon.findById(pigeon._id)
-      .populate('fatherRingId')
-      .populate('motherRingId')
+      .populate(["fatherRingId", "motherRingId"])
       .lean();
 
     if (!populatedPigeonRaw) return null;
@@ -275,26 +238,57 @@ const getPigeonWithFamily = async (pigeonId: string, maxDepth = 5) => {
     const populatedPigeon = populatedPigeonRaw;
 
     if (populatedPigeon.fatherRingId) {
-      populatedPigeon.fatherRingId = await populateFamily(populatedPigeon.fatherRingId, depth + 1);
+      populatedPigeon.fatherRingId = await populateFamily(
+        populatedPigeon.fatherRingId,
+        depth + 1
+      );
     }
     if (populatedPigeon.motherRingId) {
-      populatedPigeon.motherRingId = await populateFamily(populatedPigeon.motherRingId, depth + 1);
+      populatedPigeon.motherRingId = await populateFamily(
+        populatedPigeon.motherRingId,
+        depth + 1
+      );
     }
 
     return populatedPigeon;
   };
 
   const pigeon = await Pigeon.findById(pigeonId);
-  if (!pigeon) throw new ApiError(StatusCodes.NOT_FOUND, 'Pigeon not found');
+  if (!pigeon) throw new ApiError(StatusCodes.NOT_FOUND, "Pigeon not found");
 
   const fullFamily = await populateFamily(pigeon);
   return fullFamily;
 };
 
+// const getPigeonWithFamily = async (pigeonId: string, maxDepth = 5) => {
+//   const allPigeons = await Pigeon.find({})
+//     .select("")
+//     .lean();
+
+//   const pigeonMap = new Map<string, any>();
+//   allPigeons.forEach((p) => pigeonMap.set(p._id.toString(), p));
+
+//   const buildFamily = (pigeon: any, depth = 0): any => {
+//     if (!pigeon || depth >= maxDepth) return pigeon;
+
+//     const father = pigeon.fatherRingId
+//       ? buildFamily(pigeonMap.get(pigeon.fatherRingId.toString()), depth + 1)
+//       : null;
+//     const mother = pigeon.motherRingId
+//       ? buildFamily(pigeonMap.get(pigeon.motherRingId.toString()), depth + 1)
+//       : null;
+
+//     return { ...pigeon, fatherRingId: father, motherRingId: mother };
+//   };
+
+//   const basePigeon = pigeonMap.get(pigeonId);
+//   return buildFamily(basePigeon);
+// };
+
 const getSiblings = async (pigeonId: string) => {
   // Step 1: Find the pigeon
   const pigeon = await Pigeon.findById(pigeonId);
-  if (!pigeon) throw new ApiError(StatusCodes.NOT_FOUND, 'Pigeon not found');
+  if (!pigeon) throw new ApiError(StatusCodes.NOT_FOUND, "Pigeon not found");
 
   const fatherId = pigeon.fatherRingId;
   const motherId = pigeon.motherRingId;
@@ -303,7 +297,7 @@ const getSiblings = async (pigeonId: string) => {
   const fullSiblings = await Pigeon.find({
     _id: { $ne: pigeon._id },
     fatherRingId: fatherId,
-    motherRingId: motherId
+    motherRingId: motherId,
   }).lean();
 
   // Step 3: Half-siblings (same father OR same mother, but not both)
@@ -311,24 +305,27 @@ const getSiblings = async (pigeonId: string) => {
     _id: { $ne: pigeon._id },
     $or: [
       { fatherRingId: fatherId, motherRingId: { $ne: motherId } },
-      { motherRingId: motherId, fatherRingId: { $ne: fatherId } }
-    ]
+      { motherRingId: motherId, fatherRingId: { $ne: fatherId } },
+    ],
   }).lean();
 
   return {
     pigeon,
     fullSiblings,
-    halfSiblings
+    halfSiblings,
   };
 };
 
-
+// Import pigeons from Excel file
 const importFromExcel = async (filePath: string, user: any) => {
   // Free user check
-  if (user.role === 'USER') {
+  if (user.role === "USER") {
     const currentCount = await Pigeon.countDocuments({ user: user._id });
     if (currentCount >= 50) {
-      throw new ApiError(StatusCodes.FORBIDDEN, "Free users can only add up to 50 pigeons");
+      throw new ApiError(
+        StatusCodes.FORBIDDEN,
+        "Free users can only add up to 50 pigeons"
+      );
     }
   }
 
@@ -359,7 +356,7 @@ const importFromExcel = async (filePath: string, user: any) => {
       results,
       fatherRingId,
       motherRingId,
-      photos
+      photos,
     }: any = row;
 
     if (!ringNumber) continue; // skip empty
@@ -380,24 +377,35 @@ const importFromExcel = async (filePath: string, user: any) => {
       location,
       racingRating,
       notes,
-      results
+      results,
     };
 
     // Validate father/mother
     if (fatherRingId) {
       const father = await Pigeon.findOne({ ringNumber: fatherRingId });
-      if (!father) throw new ApiError(StatusCodes.BAD_REQUEST, `Father ${fatherRingId} not found`);
+      if (!father)
+        throw new ApiError(
+          StatusCodes.BAD_REQUEST,
+          `Father ${fatherRingId} not found`
+        );
       pigeonData.fatherRingId = father._id;
     }
     if (motherRingId) {
       const mother = await Pigeon.findOne({ ringNumber: motherRingId });
-      if (!mother) throw new ApiError(StatusCodes.BAD_REQUEST, `Mother ${motherRingId} not found`);
+      if (!mother)
+        throw new ApiError(
+          StatusCodes.BAD_REQUEST,
+          `Mother ${motherRingId} not found`
+        );
       pigeonData.motherRingId = mother._id;
     }
 
     // Parse photos (comma or semicolon separated)
     if (photos && typeof photos === "string") {
-      pigeonData.photos = photos.split(/[,;]+/).map((p: string) => p.trim()).filter(Boolean);
+      pigeonData.photos = photos
+        .split(/[,;]+/)
+        .map((p: string) => p.trim())
+        .filter(Boolean);
     } else {
       pigeonData.photos = [];
     }
@@ -413,9 +421,7 @@ const importFromExcel = async (filePath: string, user: any) => {
   return inserted;
 };
 
-// function isValidObjectId(id: string) {
-//   return mongoose.Types.ObjectId.isValid(id);
-// }
+// Export pigeons to PDF
 
 const exportToPDF = async (query: any): Promise<Buffer> => {
   // Step 1: Base query (Deleted pigeons skip)
@@ -423,15 +429,15 @@ const exportToPDF = async (query: any): Promise<Buffer> => {
 
   // Step 2: Apply search, filter, sort, pagination
   const qb = new QueryBuilder<IPigeon>(baseQuery, query);
-  qb.search(['ringNumber', 'name', 'country', 'breeder'])
+  qb.search(["ringNumber", "name", "country", "breeder"])
     .filter()
     .sort()
     .paginate() // page & limit support
     .fields()
-    .populate(['user', 'fatherRingId', 'motherRingId'], {
-      user: 'name email',
-      fatherRingId: 'ringNumber name',
-      motherRingId: 'ringNumber name',
+    .populate(["user", "fatherRingId", "motherRingId"], {
+      user: "name email",
+      fatherRingId: "ringNumber name",
+      motherRingId: "ringNumber name",
     });
 
   // Step 3: Execute query (plain objects)
@@ -439,36 +445,40 @@ const exportToPDF = async (query: any): Promise<Buffer> => {
   const pigeons: IPigeon[] = pigeonsRaw as unknown as IPigeon[];
 
   if (!pigeons.length) {
-    throw new ApiError(StatusCodes.NOT_FOUND, "No pigeons found for this filter/page");
+    throw new ApiError(
+      StatusCodes.NOT_FOUND,
+      "No pigeons found for this filter/page"
+    );
   }
 
   // Step 4: Generate PDF
-  const pdfBuffer = await pdfDoc(pigeons); // pdfDoc helper ব্যবহার হবে
+  const pdfBuffer = await pdfDoc(pigeons); // pdfDoc helper
   return pdfBuffer;
 };
 
+// Get My Pigeons with filter/pagination
 const getMyPigeonsFromDB = async (
-  user: any, 
+  user: any,
   query: any
 ): Promise<{ data: IPigeon[]; pagination: any }> => {
   if (!user || !user._id) {
     throw new ApiError(StatusCodes.UNAUTHORIZED, "User not authenticated");
   }
 
-  // শুধু current user এর pigeon filter
-  let baseQuery = Pigeon.find({ 
-    user: user._id, 
-    status: { $ne: "Deleted" } 
+  // Step 1: Base query (only this user's pigeons, Deleted skip)
+  let baseQuery = Pigeon.find({
+    user: user._id,
+    status: { $ne: "Deleted" },
   });
 
   const qb = new QueryBuilder<IPigeon>(baseQuery, query);
 
-  qb.search(['ringNumber', 'name', 'country', 'breeder'])
+  qb.search(["ringNumber", "name", "country", "breeder"])
     .filter()
     .sort()
     .paginate()
     .fields()
-    .populate(['fatherRingId', 'motherRingId'],{});
+    .populate(["fatherRingId", "motherRingId"], {});
 
   const dataRaw = await qb.modelQuery.lean();
   const data: IPigeon[] = dataRaw as unknown as IPigeon[];
@@ -477,20 +487,14 @@ const getMyPigeonsFromDB = async (
   return { data, pagination };
 };
 
-
 const searchPigeonsByNameFromDB = async (query: string) => {
-
-  const pigeons = await Pigeon.find(
-    { 
-      name: { $regex: query, $options: "i" }, 
-      status: { $ne: "Deleted" } 
-    }
-  ).select("_id name"); 
+  const pigeons = await Pigeon.find({
+    name: { $regex: query, $options: "i" },
+    status: { $ne: "Deleted" },
+  }).select("_id name");
 
   return pigeons;
 };
-
-
 
 export const PigeonService = {
   createPigeonToDB,
@@ -503,5 +507,6 @@ export const PigeonService = {
   importFromExcel,
   exportToPDF,
   getMyPigeonsFromDB,
-  searchPigeonsByNameFromDB
+  searchPigeonsByNameFromDB,
+  getMyAllPigeonDetailsFromDB,
 };

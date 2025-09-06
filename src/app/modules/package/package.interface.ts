@@ -6,9 +6,9 @@ export type IPackage = {
     price: number;
     duration: '1 month' | '3 months' | '6 months' | '1 year';
     paymentType: 'Monthly' | 'Yearly';
+    features: [{ type: String }],
     productId: string; // Stripe product id
     priceId: string;   // Stripe price id
-    credit: number;
     loginLimit: number;
     paymentLink: string;
     status?: 'Active' | 'Delete';

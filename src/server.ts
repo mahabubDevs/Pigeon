@@ -6,8 +6,7 @@ import colors from "colors";
 import { socketHelper } from "./helpers/socketHelper";
 import { Server } from "socket.io";
 import seedSuperAdmin from "./DB";
-import cluster from "cluster";
-import os from "os";
+
 
 // uncaught exception
 process.on("uncaughtException", (error) => {
@@ -64,27 +63,10 @@ async function main() {
 }
 
 // clustering logic
-const numCPUs = os.cpus().length;
 
-if (cluster.isPrimary) {
-  logger.info(colors.cyan(`Master process is running. PID: ${process.pid}`));
 
-  // Fork workers
-  for (let i = 0; i < numCPUs; i++) {
-    cluster.fork();
-  }
 
-  // Restart worker if it dies
-  cluster.on("exit", (worker, code, signal) => {
-    logger.error(
-      `Worker ${worker.process.pid} died (code: ${code}, signal: ${signal}). Forking a new worker...`
-    );
-    cluster.fork();
-  });
-} else {
-  // Worker runs the main server
-  main();
-}
+main();
 
 // SIGTERM
 process.on("SIGTERM", () => {

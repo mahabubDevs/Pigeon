@@ -9,13 +9,14 @@ export interface IPigeon {
   shortInfo?: string;
   breeder?: string;
   color?: string;
+  catagory?: string;
   pattern?: string;
-  racherRating?: number;
+  racingRating?: number;
   breederRating?: number;
   gender?: "Male" | "Female" | "Unknown";
   status?: string;
   location?: string;
-  racingRating?: number;
+  racerRating?: number;
   notes?: string;
   photos?: string[]; // multiple photo url
   results?: string; // details text

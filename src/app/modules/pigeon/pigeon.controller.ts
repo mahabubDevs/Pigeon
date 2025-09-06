@@ -4,14 +4,13 @@ import sendResponse from "../../../shared/sendResponse";
 import { StatusCodes } from "http-status-codes";
 import { PigeonService } from "./pigeon.service";
 import ApiError from "../../../errors/ApiErrors";
-import { PigeonValidation } from "./pigeon.validation";
+// import { PigeonValidation } from "./pigeon.validation";
+import { IUser } from "../user/user.interface";
 
-/**
- * Create Pigeon
- * form-data: data (JSON string) + image[fieldName] (multiple files)
- */
+// Create Pigeon form-data: data (JSON string) + image[fieldName] (multiple files)
+
 const createPigeon = catchAsync(async (req: Request, res: Response) => {
-  const result = await PigeonService.createPigeonToDB(req.body.data, req.files, req.user);
+  const result = await PigeonService.createPigeonToDB(req.body, req.files, req.user);
 
   sendResponse(res, {
     statusCode: 200,
@@ -22,13 +21,11 @@ const createPigeon = catchAsync(async (req: Request, res: Response) => {
 });
 
 
-/**
- * Update Pigeon
- * form-data: data (JSON string) + image[fieldName] (optional)
- */
+// Update Pigeon
+
 const updatePigeon = catchAsync(async (req: Request, res: Response) => {
   const pigeonId = req.params.id;
-  const deletedIndexes: number[] = req.body.deletedIndexes || []; // যেসব image remove করতে চাইছে
+  const deletedIndexes: number[] = req.body.deletedIndexes || []; // default empty array if not provided
   const result = await PigeonService.updatePigeonToDB(
     pigeonId,
     req.body.data,
@@ -44,11 +41,11 @@ const updatePigeon = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
-/**
- * Get all pigeons
- */
+
+// Get all pigeons
+
 const getAllPigeons = catchAsync(async (req: Request, res: Response) => {
-  const result = await PigeonService.getAllPigeonsFromDB( req.query );
+  const result = await PigeonService.getAllPigeonsFromDB(req.query);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -58,9 +55,8 @@ const getAllPigeons = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-/**
- * Get single pigeon details
- */
+// Get single pigeon details
+
 const getPigeonDetails = catchAsync(async (req: Request, res: Response) => {
   const result = await PigeonService.getPigeonDetailsFromDB(req.params.id);
 
@@ -72,9 +68,8 @@ const getPigeonDetails = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-/**
- * Delete pigeon
- */
+// Delete pigeon
+
 const deletePigeon = catchAsync(async (req: Request, res: Response) => {
   const result = await PigeonService.deletePigeonFromDB(req.params.id);
 
@@ -86,20 +81,25 @@ const deletePigeon = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-
+// Get pigeon with family members (parents) up to a certain depth
 const getPigeonWithFamily = catchAsync(async (req, res) => {
   const pigeonId = req.params.id;
-  const pigeon = await PigeonService.getPigeonWithFamily(pigeonId);
+
+  // const role = req.user?.role?.toLowerCase() || 'user';
+  const role = (req.user as IUser).role.toLowerCase();
+  const maxDepth = role === "PAIDUSER" ? 5 : 3;
+
+  const pigeon = await PigeonService.getPigeonWithFamily(pigeonId, maxDepth);
 
   sendResponse(res, {
     statusCode: 200,
     success: true,
-    message: 'Pigeon with family details fetched',
-    data: pigeon
+    message: "Pigeon with family details fetched",
+    data: pigeon,
   });
 });
 
-
+// Get siblings of a pigeon
 const getSiblingsController = catchAsync(async (req, res) => {
   const pigeonId = req.params.id;
   const data = await PigeonService.getSiblings(pigeonId);
@@ -107,13 +107,12 @@ const getSiblingsController = catchAsync(async (req, res) => {
   sendResponse(res, {
     statusCode: 200,
     success: true,
-    message: 'Siblings fetched successfully',
-    data
+    message: "Siblings fetched successfully",
+    data,
   });
 });
 
-
-// pigeon.controller.ts
+// Import pigeons from Excel file
 const importPigeons = catchAsync(async (req, res) => {
   if (!req.files || !("excel" in req.files)) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Excel file required");
@@ -129,8 +128,8 @@ const importPigeons = catchAsync(async (req, res) => {
   });
 });
 
+// Export pigeons to PDF
 const exportPigeonsPDF = catchAsync(async (req, res) => {
-  // req.query তে সব filter/pagination আছে
   const pdfBuffer = await PigeonService.exportToPDF(req.query);
 
   res.setHeader("Content-Type", "application/pdf");
@@ -149,8 +148,25 @@ const getMyPigeons = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getMyAllPigeons = catchAsync(async (req: Request, res: Response) => {
+  const user: any = req.user;
+
+  if (!user?._id) {
+    throw new ApiError(StatusCodes.UNAUTHORIZED, "User not authenticated");
+  }
+
+  const result = await PigeonService.getMyAllPigeonDetailsFromDB(user._id);
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: "My pigeons retrieved successfully",
+    data: result,
+  });
+});
+
 const searchPigeonsByName = catchAsync(async (req: Request, res: Response) => {
-  const { q } = req.query; // frontend থেকে ?q=abc আসবে
+  const { q } = req.query; // search query
 
   if (!q || typeof q !== "string") {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Query param ?q required");
@@ -166,8 +182,6 @@ const searchPigeonsByName = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-
-
 export const PigeonController = {
   createPigeon,
   updatePigeon,
@@ -179,5 +193,6 @@ export const PigeonController = {
   importPigeons,
   exportPigeonsPDF,
   getMyPigeons,
-  searchPigeonsByName
+  searchPigeonsByName,
+  getMyAllPigeons,
 };

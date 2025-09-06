@@ -6,6 +6,9 @@ import router from "../src/app/routes";
 import globalErrorHandler from "./app/middlewares/globalErrorHandler";
 import session from "express-session";
 
+// import passport from "./config/passport"; // Adjust the path as necessary
+// import passportConfig from "./config/passport"; // Adjust the path as necessary
+
 //  SubscriptionRoutes import 
 import handleStripeWebhook from "./helpers/handleStripeWebhook";
 
@@ -39,6 +42,10 @@ app.use(
     cookie: { secure: false }, // production a HTTPS should be true
   })
 );
+
+//  Passport initialize
+// app.use(passport.initialize());
+// app.use(passport.session());
 
 // 🔹 Worker PID logging middleware
 app.use((req: Request, res: Response, next) => {

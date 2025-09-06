@@ -43,32 +43,17 @@ const createUser = async (payload: Partial<IUser>): Promise<IUser> => {
 };
 
 
-// রোল অ্যাসাইন করা
-const assignRole = async (userId: string, role: string) => {
-  const updatedUser = await User.findByIdAndUpdate(userId, { role }, { new: true });
-  if (!updatedUser) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to assign role");
-  }
-};
 
-// পেজ অ্যাক্সেস অ্যাসাইন করা
-const assignPageAccess = async (userId: string, pages: string[]) => {
-  const updatedUser = await User.findByIdAndUpdate(userId, { pages }, { new: true });
-  if (!updatedUser) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to assign page access");
-  }
-};
 
-/**
- * Get All Users
- */
+ // Get All Users
+ 
 const getAllUsers = async (): Promise<IUser[]> => {
   return await User.find();
 };
 
-/**
- * Get Single User by ID
- */
+
+ // Get Single User by ID
+
 const getSingleUser = async (id: string): Promise<IUser | null> => {
   const user = await User.findById(id);
 
@@ -79,9 +64,9 @@ const getSingleUser = async (id: string): Promise<IUser | null> => {
   return user;
 };
 
-/**
- * Update User by ID
- */
+
+ // Update User by ID
+
 const updateUser = async (
   id: string,
   payload: Partial<IUser>
@@ -95,9 +80,9 @@ const updateUser = async (
   return updatedUser;
 };
 
-/**
- * Delete User by ID
- */
+
+ // Delete User by ID
+
 const deleteUser = async (id: string): Promise<IUser | null> => {
   const deletedUser = await User.findByIdAndDelete(id);
 
@@ -108,49 +93,6 @@ const deleteUser = async (id: string): Promise<IUser | null> => {
   return deletedUser;
 };
 
-/**
- * Assign Role to User
- */
-
-
-// -------------------------
-// 🔹 Assign Role to User
-// -------------------------
-
-
-// const createUser = async (payload: Partial<IUser>): Promise<IUser> => {
-//   const user = await User.create(payload);
-
-//   if (!user) {
-//     throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to create user");
-//   }
-
-//   return user;
-// };
-
-
-// const assignRole = async (id: string, role: string): Promise<IUser | null> => {
-//   const updatedUser = await User.findByIdAndUpdate({ _id: id }, { role }, { new: true });
-
-//   if (!updatedUser) {
-//     throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to assign role");
-//   }
-
-//   return updatedUser;
-// };
-
-// // -------------------------
-// // 🔹 Assign Page Access to User
-// // -------------------------
-// const assignPageAccess = async (id: string, pages: string[]): Promise<IUser | null> => {
-//   const updatedUser = await User.findByIdAndUpdate({ _id: id }, { pages }, { new: true });
-
-//   if (!updatedUser) {
-//     throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to assign page access");
-//   }
-
-//   return updatedUser;
-// };
 
 export const UserService = {
   createUser,
@@ -159,6 +101,5 @@ export const UserService = {
   updateUser,
   deleteUser,
 
-//   assignRole,
-//   assignPageAccess
+
 };

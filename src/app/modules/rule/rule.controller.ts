@@ -18,6 +18,7 @@ const createPrivacyPolicy = catchAsync(async (req: Request, res: Response) => {
     })
 })
 
+//privacy policy
 const getPrivacyPolicy = catchAsync(async (req: Request, res: Response) => {
     const result = await RuleService.getPrivacyPolicyFromDB()
   

@@ -32,7 +32,7 @@ export const authWithPageAccess = (page: string) => {
       }
 
       req.user = {
-        id: decoded.id,
+        _id: decoded.id,
         role: decoded.role,
         email: decoded.email,
       };
