@@ -8,14 +8,14 @@ export const validateFormData = (schema: ZodSchema) => {
     try {
       let parsedData: any = {};
 
-      // 1️⃣ multipart/form-data
+      //  multipart/form-data
       if (req.is("multipart/form-data")) {
         parsedData =
           req.body.data && typeof req.body.data === "string"
             ? JSON.parse(req.body.data)
             : req.body.data || { ...req.body };
       } 
-      // 2️⃣ application/json
+      // application/json
       else if (req.is("application/json")) {
         parsedData =
           req.body.data && typeof req.body.data === "string"
@@ -34,18 +34,18 @@ export const validateFormData = (schema: ZodSchema) => {
       // Ensure photos is an array
       if (!parsedData.photos) parsedData.photos = [];
 
-      // 5️⃣ Numeric conversion
+      //  Numeric conversion
       ["birthYear", "racingRating", "racherRating", "breederRating"].forEach(field => {
         if (parsedData[field] !== undefined && parsedData[field] !== "") {
           parsedData[field] = Number(parsedData[field]);
         }
       });
 
-      // 6️⃣ Zod validation
+      //  Zod validation
       const parsed = schema.safeParse(parsedData);
 
       if (!parsed.success) {
-        // Field name সহ প্রথম error দেখাবে
+        // Field name in error message
         const firstError = parsed.error.issues[0];
         const fieldName = firstError.path[0] || "Field";
         return next(

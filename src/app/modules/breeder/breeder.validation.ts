@@ -1,36 +1,34 @@
+// src/modules/breeder/breeder.validation.ts
 import { z } from "zod";
 
-// Validation for parsed JSON data (not req.body directly)
-const createPigeonZodSchema = z.object({
-  ringNumber: z.string({ required_error: "Ring Number is required" }),
-  name: z.string().optional(),
-  country: z.string().optional(),
-  birthYear: z
-    .number()
-    .int()
-    .min(1900, "Invalid birth year")
-    .max(new Date().getFullYear(), "Birth year cannot be in future")
-    .optional(),
-  shortInfo: z.string().optional(),
-  breeder: z.string().optional(),
-  color: z.string().optional(),
-  pattern: z.string().optional(),
-  racherRating: z.number().min(0).max(10).optional(),
-  breederRating: z.number().min(0).max(10).optional(),
-  gender: z.enum(["Male", "Female", "Unknown"]).optional(),
-  status: z.string().optional(),
-  location: z.string().optional(),
-  racingRating: z.number().min(0).max(10).optional(),
-  notes: z.string().optional(),
-  photos: z.array(z.string().url()).optional(),
-  results: z.string().optional(),
-  father: z.string().optional(),
-  mother: z.string().optional(),
+// Create schema
+const createBreederZodSchema = z.object({
+  loftName: z
+    .string({ required_error: "Loft Name is required" })
+    .min(2, "Loft Name must be at least 2 characters"),
+    
+  breederName: z
+    .string({ required_error: "Breeder Name is required" })
+    .min(2, "Breeder Name must be at least 2 characters"),
+    
+  country: z
+    .string({ required_error: "Country is required" })
+    .min(2, "Country must be at least 2 characters"),
+    
+  email: z
+    .string({ required_error: "Email is required" })
+    .email("Invalid email address"),
+    
+  phone: z
+    .string({ required_error: "Phone number is required" })
+    .regex(/^\+?\d{7,15}$/, "Invalid phone number"),
 });
 
-const updatePigeonZodSchema = createPigeonZodSchema.partial();
+// Update schema (all fields optional)
+const updateBreederZodSchema = createBreederZodSchema.partial();
 
-export const PigeonValidation = {
-  createPigeonZodSchema,
-  updatePigeonZodSchema,
+// Export object
+export const BreederValidation = {
+  createBreederZodSchema,
+  updateBreederZodSchema,
 };

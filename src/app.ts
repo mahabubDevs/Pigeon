@@ -6,7 +6,7 @@ import router from "../src/app/routes";
 import globalErrorHandler from "./app/middlewares/globalErrorHandler";
 import session from "express-session";
 
-// import passport from "./config/passport"; // Adjust the path as necessary
+import passport from "./config/passport"; // Adjust the path as necessary
 // import passportConfig from "./config/passport"; // Adjust the path as necessary
 
 //  SubscriptionRoutes import 

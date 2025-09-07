@@ -149,8 +149,15 @@ const getAllPigeonsFromDB = async (
   const qb = new QueryBuilder<IPigeon>(baseQuery, query);
 
   qb.search(["ringNumber", "name", "country", "breeder"])
-    .filter()
-    .sort()
+    .filter();
+     // Step 3: Explicit status filter
+  if (query.status) {
+    qb.modelQuery = qb.modelQuery.where({
+      status: new RegExp(`^${query.status}$`, "i") // case-insensitive exact match
+    });
+  }
+
+      qb.sort()
     .paginate()
     .fields()
     .populate(["user", "fatherRingId", "motherRingId"], {
@@ -193,17 +200,25 @@ const getMyAllPigeonDetailsFromDB = async (
   userId: string,
   query: any
 ): Promise<{ data: IPigeon[]; pagination: any }> => {
-  // Step 1: Base query (only this user's pigeons, Deleted skip)
-  let baseQuery = Pigeon.find({
-    user: userId,
-    status: { $ne: "Deleted" },
-  });
+  
+  // Step 1: Base query (only this user's pigeons, skip Deleted)
+  let baseQuery = Pigeon.find({ user: userId, status: { $ne: "Deleted" } });
 
   const qb = new QueryBuilder<IPigeon>(baseQuery, query);
 
+  // Step 2: Search only on these fields (exclude status from search)
   qb.search(["ringNumber", "name", "country", "breeder"])
-    .filter()
-    .sort()
+    .filter(); // other filters except status
+
+  // Step 3: Explicit status filter
+  if (query.status) {
+    qb.modelQuery = qb.modelQuery.where({
+      status: new RegExp(`^${query.status}$`, "i") // case-insensitive exact match
+    });
+  }
+
+  // Step 4: Sort, paginate, fields, populate
+  qb.sort()
     .paginate()
     .fields()
     .populate(["user", "fatherRingId", "motherRingId"], {
@@ -214,17 +229,14 @@ const getMyAllPigeonDetailsFromDB = async (
 
   // Execute query
   const dataRaw = await qb.modelQuery.lean();
-
   const data: IPigeon[] = dataRaw as unknown as IPigeon[];
 
   const pagination = await qb.getPaginationInfo();
 
-  if (!data || data.length === 0) {
-    throw new ApiError(StatusCodes.NOT_FOUND, "No pigeons found for this user");
-  }
-
-  return {pagination, data };
+  // Always return empty array if no data
+  return { pagination, data };
 };
+
 
 // Delete Pigeon (soft delete: set status = "Deleted")
 

@@ -28,7 +28,7 @@ export const createPigeonZodSchema = z.object({
   location: z.string({ required_error: "Location is required" }),
   racingRating: z.preprocess(
     val => (val !== undefined && val !== "" ? Number(val) : undefined),
-    z.number().min(0).max(10).optional()
+    z.number().min(0).max(100).optional()
   ),
   notes: z.string().optional(),
   photos: z.array(z.string()).min(1, "At least one photo is required"), // required

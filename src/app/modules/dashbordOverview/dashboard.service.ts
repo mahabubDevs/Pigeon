@@ -12,7 +12,7 @@ export const DashboardService = {
     // 
     const iconPigeons = await Pigeon.countDocuments({ iconic: true });
 
-    // ✅ Subscription revenue (total amountPaid sum)
+    //  Subscription revenue (total amountPaid sum)
     const subscriptionRevenueAgg = await Subscription.aggregate([
       { $match: { status: "active" } },
       { $group: { _id: null, totalRevenue: { $sum: "$price" } } },
@@ -20,8 +20,21 @@ export const DashboardService = {
     const subscriptionRevenue =
       subscriptionRevenueAgg.length > 0 ? subscriptionRevenueAgg[0].totalRevenue : 0;
 
-    // ✅ Recently added pigeons (last 5)
-    const recentPigeons = await Pigeon.find().sort({ createdAt: -1 }).limit(5);
+    //  Recently added pigeons (last 5)
+    const recentPigeons = await Pigeon.find()
+    .sort({ createdAt: -1 })
+    .limit(5)
+    .populate([
+      {
+        path: 'fatherRingId',
+        select: 'ringNumber name',
+      },
+      {
+        path: 'motherRingId',
+        select: 'ringNumber name',
+      }
+    ])
+    ;
 
     return {
       totalPigeons,
