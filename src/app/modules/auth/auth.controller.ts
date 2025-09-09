@@ -56,6 +56,7 @@ const resetPassword = catchAsync(async (req: Request, res: Response) => {
 
 const changePassword = catchAsync(async (req: Request, res: Response) => {
     const user = req.user;
+    console.log("Step 0: Authenticated user", user);
     if (!user) {
         throw new Error("User not authenticated");
     }

@@ -189,41 +189,29 @@ const resetPasswordToDB = async ( token: string, payload: IAuthResetPassword ) =
     );
 };
   
-const changePasswordToDB = async ( user: JwtPayload, payload: IChangePassword) => {
-
-    console.log("Step 1: User payload", user);
-
+const changePasswordToDB = async (user: JwtPayload, payload: IChangePassword) => {
+    const userId = user._id || user.id;
     const { currentPassword, newPassword, confirmPassword } = payload;
-    const isExistUser = await User.findById(user.id).select('+password');
-    console.log("Step 2: Found user", isExistUser);
-    if (!isExistUser) {
-        throw new ApiError(StatusCodes.BAD_REQUEST, "User doesn't exist!");
+
+    const isExistUser = await User.findById(userId).select('+password');
+    if (!isExistUser) throw new ApiError(StatusCodes.BAD_REQUEST, "User doesn't exist!");
+
+    if (!(await User.isMatchPassword(currentPassword, isExistUser.password))) {
+        throw new ApiError(StatusCodes.BAD_REQUEST, 'Current password is incorrect');
     }
-  
-    //current password match
-    if ( currentPassword && !(await User.isMatchPassword(currentPassword, isExistUser.password))) {
-        throw new ApiError(StatusCodes.BAD_REQUEST, 'Password is incorrect');
-    }
-  
-    //newPassword and current password
+
     if (currentPassword === newPassword) {
-        throw new ApiError(StatusCodes.BAD_REQUEST, 'Please give different password from current password');
+        throw new ApiError(StatusCodes.BAD_REQUEST, 'New password must be different from current password');
     }
 
-    //new password and confirm password check
     if (newPassword !== confirmPassword) {
-        throw new ApiError( StatusCodes.BAD_REQUEST, "Password and Confirm password doesn't matched");
+        throw new ApiError(StatusCodes.BAD_REQUEST, "New password and confirm password do not match");
     }
-  
-    //hash password
-    const hashPassword = await bcrypt.hash( newPassword, Number(config.bcrypt_salt_rounds));
-  
-    const updateData = {
-        password: hashPassword,
-    };
 
-    await User.findOneAndUpdate({ _id: user.id }, updateData, { new: true });
+    const hashPassword = await bcrypt.hash(newPassword, Number(config.bcrypt_salt_rounds));
+    await User.findByIdAndUpdate(userId, { password: hashPassword }, { new: true });
 };
+
 
 
 const newAccessTokenToUser = async(token: string)=>{

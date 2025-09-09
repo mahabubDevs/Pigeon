@@ -114,11 +114,7 @@ const deletePackageToDB = async(id: string): Promise<IPackage | null>=>{
         throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid ID")
     }
 
-    const result = await Package.findByIdAndUpdate(
-        {_id: id},
-        {status: "Delete"},
-        {new: true}
-    );
+    const result = await Package.findByIdAndDelete(id);
 
     if(!result){
         throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to deleted Package")

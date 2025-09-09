@@ -48,11 +48,13 @@ router
     .delete(auth( USER_ROLES.USER, USER_ROLES.PAIDUSER, USER_ROLES.ADMIN,USER_ROLES.SUPER_ADMIN), PigeonController.deletePigeon)
 router
   .route('/family/:id')
-  .get(PigeonController.getPigeonWithFamily);
+
+  .get(auth(USER_ROLES.ADMIN,USER_ROLES.PAIDUSER,USER_ROLES.USER,USER_ROLES.SUPER_ADMIN), PigeonController.getPigeonWithFamily);
 
 router
   .route('/siblings/:id')
-  .get(auth( USER_ROLES.PAIDUSER), PigeonController.getSiblingsController);
+  
+  .get(auth( USER_ROLES.PAIDUSER,USER_ROLES.ADMIN), PigeonController.getSiblingsController);
 
 router
   .route('/my-pigeons/:id')

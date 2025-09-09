@@ -10,7 +10,9 @@ import { IUser } from "../user/user.interface";
 // Create Pigeon form-data: data (JSON string) + image[fieldName] (multiple files)
 
 const createPigeon = catchAsync(async (req: Request, res: Response) => {
+  
   const result = await PigeonService.createPigeonToDB(req.body, req.files, req.user);
+  
 
   sendResponse(res, {
     statusCode: 200,

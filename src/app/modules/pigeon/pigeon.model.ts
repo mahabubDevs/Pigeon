@@ -1,5 +1,6 @@
 import mongoose, { Schema, Model } from "mongoose";
 import { IPigeon } from "./pigeon.interface";
+import { string } from "zod";
 
 const pigeonSchema: Schema<IPigeon> = new Schema(
   {
@@ -18,7 +19,8 @@ const pigeonSchema: Schema<IPigeon> = new Schema(
     },
     country: {
       type: String,
-      required: true,    },
+      required: true,   
+     },
     birthYear: {
       type: Number,
       required: true,
@@ -35,17 +37,14 @@ const pigeonSchema: Schema<IPigeon> = new Schema(
     pattern: {
       type: String,
     },
-    racingRating: {
-      type: Number,
-      default: 0,
-    },
+    racingRating: { type: String, default: "" },
     breederRating: {
       type: Number,
       default: 0,
     },
     gender: {
       type: String,
-      enum: ["Male", "Female", "Unknown"],
+      enum: ["Cock", "Hen", "Unknown"],
       default: "Unknown",
     },
     status: {

@@ -30,9 +30,11 @@ const createPigeonToDB = async (data: any, files: any, user: any) => {
   const parsedData = { ...data };
 
   // Numeric conversion
-  ["birthYear", "racingRating", "racherRating", "breederRating"].forEach(field => {
-    if (parsedData[field] !== undefined) parsedData[field] = Number(parsedData[field]);
-  });
+ ["birthYear", "racherRating", "breederRating"].forEach(field => {
+  if (parsedData[field] !== undefined) parsedData[field] = Number(parsedData[field]);
+});
+// এখানে racingRating নেই, তাই NaN হবে না
+
 
   // Free user restrictions
   if (!["ADMIN", "SUPER_ADMIN"].includes(user.role)) {
@@ -245,11 +247,15 @@ const deletePigeonFromDB = async (id: string): Promise<IPigeon | null> => {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid ID");
   }
 
-  const result = await Pigeon.findByIdAndUpdate(
-    { _id: id },
-    { status: "Deleted" },
-    { new: true }
-  );
+  // Soft delete: set status to "Deleted"
+  // const result = await Pigeon.findByIdAndUpdate(
+  //   { _id: id },
+  //   { status: "Deleted" },
+  //   { new: true }
+  // );
+
+
+  const result = await Pigeon.findOneAndDelete({ _id: id });
 
   if (!result) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to delete Pigeon");
