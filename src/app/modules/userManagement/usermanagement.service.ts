@@ -93,6 +93,18 @@ const deleteUser = async (id: string): Promise<IUser | null> => {
   return deletedUser;
 };
 
+const activeInactiveUser = async (id: string): Promise<IUser | null> => {
+  const user = await User.findById(id);
+
+  if (!user) {
+    throw new ApiError(StatusCodes.NOT_FOUND, "User not found");
+  }
+  user.verified = !user.verified;
+  console.log("user id")
+  await user.save();
+  return user;
+}
+
 
 export const UserService = {
   createUser,
@@ -100,6 +112,6 @@ export const UserService = {
   getSingleUser,
   updateUser,
   deleteUser,
-
+  activeInactiveUser
 
 };

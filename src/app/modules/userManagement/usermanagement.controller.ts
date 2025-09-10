@@ -70,12 +70,23 @@ const deleteUser = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const activeInactiveUser = catchAsync(async (req: Request, res: Response) => {
+  const result = await UserService.activeInactiveUser(req.params.id);
+  sendResponse(res, {
+    success: true,
+    statusCode: StatusCodes.OK,
+    message: "User status updated successfully",
+    data: result,
+  });
+});
+
 export const UserController = {
   createUser,
   getAllUsers,
   getSingleUser,
   updateUser,
   deleteUser,
+  activeInactiveUser
  
 
 };

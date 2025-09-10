@@ -131,19 +131,23 @@ userSchema.statics.isMatchPassword = async ( password: string, hashPassword: str
     return await bcrypt.compare(password, hashPassword);
 };
   
-//check user
+
+// user check 
 userSchema.pre('save', async function (next) {
-    //check user
-    const isExist = await User.findOne({ email: this.email });
-    if (isExist) {
-        throw new ApiError(StatusCodes.BAD_REQUEST, 'Email already exist!');
-    }
   
-     // Assign default userName if it is null
-   
-    
-    //password hash
-    this.password = await bcrypt.hash( this.password, Number(config.bcrypt_salt_rounds));
-    next();
+  if (this.isModified('email')) {
+    const isExist = await User.findOne({ email: this.email, _id: { $ne: this._id } });
+    if (isExist) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, 'Email already exist!');
+    }
+  }
+
+
+  if (this.isModified('password')) {
+    this.password = await bcrypt.hash(this.password, Number(config.bcrypt_salt_rounds));
+  }
+
+  next();
 });
+
 export const User = model<IUser, UserModal>("User", userSchema)

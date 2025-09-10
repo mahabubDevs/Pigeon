@@ -36,6 +36,12 @@ router
     UserController.deleteUser
   );
 
+router 
+  .route("/active-inactive/:id")
+  .patch(
+    auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN),
+    UserController.activeInactiveUser
+  )
 
 
 export const UserManagementRoutes = router;

@@ -21,7 +21,7 @@ router
 
 router
     .route("/:id")
-    .patch(auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.ADMIN), PackageController.updatePackage)
-    .delete(auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.ADMIN), PackageController.deletePackage)
+    .patch(authWithPageAccess('package'), PackageController.updatePackage)
+    .delete(authWithPageAccess('package'), PackageController.deletePackage)
 
 export const PackageRoutes = router;
