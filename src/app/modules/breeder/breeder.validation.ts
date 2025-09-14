@@ -22,6 +22,11 @@ const createBreederZodSchema = z.object({
   phone: z
     .string({ required_error: "Phone number is required" })
     .regex(/^\+?\d{7,15}$/, "Invalid phone number"),
+
+    experience: z.string().optional(),
+    score: z.number().optional(),
+  gender: z.enum(["Hen", "Cock", "Other"]).optional(),
+    
 });
 
 // Update schema (all fields optional)
