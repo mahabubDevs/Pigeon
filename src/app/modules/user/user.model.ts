@@ -12,12 +12,12 @@ const userSchema = new Schema<IUser, UserModal>(
             type: String,
             required: false,
         },
-        userName: {
-            type: String,
-            required: true,
-            unique: false,
-            lowercase: false,
-        },
+        // userName: {
+        //     type: String,
+        //     required: false,
+        //     unique: false,
+        //     lowercase: false,
+        // },
         appId: {
             type: String,
             required: false,
@@ -60,6 +60,10 @@ const userSchema = new Schema<IUser, UserModal>(
         verified: {
             type: Boolean,
             default: false,
+        },
+        status: {
+            type:Boolean,
+            default: true,
         },
         stripeAccountId: { type: String, default: null },
 

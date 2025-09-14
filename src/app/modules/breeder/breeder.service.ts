@@ -2,6 +2,20 @@ import { Breeder } from "./breeder.model";
 import { IBreeder } from "./breeder.interface";
 import { StatusCodes } from "http-status-codes";
 import ApiError from "../../../errors/ApiErrors";
+import QueryBuilder from "../../../util/queryBuilder";
+
+
+
+interface getAllBreeders {
+  searchTerm?: string;
+  sort?: string;
+  page?: number;
+  limit?: number;
+  fields?: string;
+  [key: string]: any;
+}
+
+
 
 export const BreederService = {
   createBreeder: async (data: IBreeder): Promise<IBreeder> => {
@@ -9,8 +23,26 @@ export const BreederService = {
     return result;
   },
 
-  getAllBreeders: async (): Promise<IBreeder[]> => {
-    return Breeder.find().lean();
+  getAllBreeders: async (query:getAllBreeders = {}): Promise<{
+    breeder: IBreeder[];
+    pagination: {
+      total: number;
+      limit: number;
+      page: number;
+      totalPage: number;
+    }
+  }> => {
+
+  const builder = new QueryBuilder<IBreeder>(Breeder.find(), query)
+    .search([])
+    .filter()
+    .sort()
+    .paginate()
+    .fields();
+    const breeder = await builder.modelQuery;
+    const pagination = await builder.getPaginationInfo();
+
+    return {pagination, breeder};
   },
 
   getBreederById: async (id: string): Promise<IBreeder | null> => {

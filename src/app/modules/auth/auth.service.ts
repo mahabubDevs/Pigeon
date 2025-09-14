@@ -17,12 +17,10 @@ import generateOTP from '../../../util/generateOTP';
 import { ResetToken } from '../resetToken/resetToken.model';
 import { User } from '../user/user.model';
 import { IUser } from '../user/user.interface';
+import { userEmailSubscripton } from '../userEmailSubscripton/userEmailSubscripton.model';
 
 //login
 const loginUserFromDB = async (payload: ILoginData) => {
-
-
-
 
     const { email, password } = payload;
     const isExistUser:any = await User.findOne({ email }).select('+password');
@@ -36,12 +34,17 @@ const loginUserFromDB = async (payload: ILoginData) => {
     if (!isExistUser.verified) {
         throw new ApiError(StatusCodes.BAD_REQUEST, 'Please verify your account, then try to login again');
     }
+
+    if(!isExistUser.status){
+        throw new ApiError(StatusCodes.FORBIDDEN, "your account is blocked");
+    }
   
     //check match password
     if ( password && !(await User.isMatchPassword(password, isExistUser.password))) {
         throw new ApiError(StatusCodes.BAD_REQUEST, 'Password is incorrect!');
     }
   
+    
     //create token
     const accessToken = jwtHelper.createToken(
         { id: isExistUser._id, role: isExistUser.role, email: isExistUser.email },

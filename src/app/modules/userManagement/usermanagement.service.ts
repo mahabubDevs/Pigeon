@@ -5,7 +5,16 @@ import { StatusCodes } from "http-status-codes";
 import bcrypt from "bcrypt";
 import config from "../../../config";
 import {emailHelper }  from "../../../helpers/emailHelper";
+import QueryBuilder from "../../../util/queryBuilder";
 
+interface GetAllUsersQuery {
+  searchTerm?: string;
+  sort?: string;
+  page?: number;
+  limit?: number;
+  fields?: string;
+  [key: string]: any;
+}
 
 
 const createUser = async (payload: Partial<IUser>): Promise<IUser> => {
@@ -21,7 +30,7 @@ const createUser = async (payload: Partial<IUser>): Promise<IUser> => {
 
     // 2. Send email with credentials
     const emailContent = `
-        Hi ${createUser.name || createUser.userName},
+        Hi ${createUser.name },
         Your account has been created.
         Email: ${createUser.email}
         Password: ${payload.password}   // user provided password
@@ -44,11 +53,28 @@ const createUser = async (payload: Partial<IUser>): Promise<IUser> => {
 
 
 
-
  // Get All Users
  
-const getAllUsers = async (): Promise<IUser[]> => {
-  return await User.find();
+const getAllUsers = async (query: GetAllUsersQuery = {}): Promise<{
+  users: IUser[];
+  pagination: {
+    total: number;
+    limit: number;
+    page: number;
+    totalPage: number;
+  };
+}> => {
+  const builder = new QueryBuilder<IUser>(User.find(), query)
+    .search(['firstName', 'lastName', 'email', 'phoneNumber'])
+    .filter()
+    .sort()
+    .paginate()
+    .fields();
+
+  const users = await builder.modelQuery;
+  const pagination = await builder.getPaginationInfo();
+
+  return { pagination,users  };
 };
 
 
@@ -71,7 +97,24 @@ const updateUser = async (
   id: string,
   payload: Partial<IUser>
 ): Promise<IUser | null> => {
-  const updatedUser = await User.findByIdAndUpdate(id, payload, { new: true });
+  // যদি email update করতে চায় তাহলে আগে check করো
+  if (payload.email) {
+    const isEmailExist = await User.findOne({
+      email: payload.email,
+      _id: { $ne: id }, // নিজের user বাদ দিয়ে check করো
+    });
+
+    if (isEmailExist) {
+      throw new ApiError(StatusCodes.CONFLICT, "Email already exists");
+    }
+  }
+
+  // Update operation
+  const updatedUser = await User.findByIdAndUpdate(
+    id,
+    { $set: payload }, // শুধু incoming payload fields update হবে
+    { new: true, runValidators: true }
+  );
 
   if (!updatedUser) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to update user");
@@ -99,7 +142,7 @@ const activeInactiveUser = async (id: string): Promise<IUser | null> => {
   if (!user) {
     throw new ApiError(StatusCodes.NOT_FOUND, "User not found");
   }
-  user.verified = !user.verified;
+  user.status = !user.status;
   console.log("user id")
   await user.save();
   return user;
