@@ -12,6 +12,10 @@ router.get('/admin',
     auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN),
     NotificationController.adminNotificationFromDB
 );
+router.get('/recentNotification',
+    auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN),
+    NotificationController.recentNotification
+);
 router.patch('/',
     auth(USER_ROLES.USER),
     NotificationController.readNotification

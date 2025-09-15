@@ -70,6 +70,29 @@ const adminNotificationFromDB = async (query:getAllNotification = {}): Promise<{
     const result = await Notification.find({ type: 'ADMIN' });
     return {pagination, notification}
 };
+const recentNotification = async (query:getAllNotification = {}): Promise<{
+    notification: INotification[];
+    pagination: {
+        total: number;
+        limit: number;
+        page: number;
+        totalPage: number;
+    }
+}> => {
+
+    const builder = new QueryBuilder<INotification>(Notification.find(),query)
+    .search([])
+    .paginate()
+    .fields()
+    .sort()
+    .fields();
+
+   
+    const notification = await builder.modelQuery.limit(4).exec();
+    const pagination = await builder.getPaginationInfo();
+    const result = await Notification.find({ type: 'ADMIN' });
+    return {pagination, notification}
+};
 
 // read notifications only for admin
 const adminReadNotificationToDB = async (): Promise<INotification | null> => {
@@ -85,5 +108,6 @@ export const NotificationService = {
     adminNotificationFromDB,
     getNotificationFromDB,
     readNotificationToDB,
-    adminReadNotificationToDB
+    adminReadNotificationToDB,
+    recentNotification
 };

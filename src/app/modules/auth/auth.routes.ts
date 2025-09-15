@@ -66,10 +66,10 @@ router.post(
 //     AuthController.resendVerificationEmail
 // );
 
-// router.post(
-//     '/social-login',
-//     AuthController.socialLogin
-// );
+router.post(
+    '/social-login',
+    AuthController.socialLogin
+);
 
 router.delete(
     '/delete-account',
