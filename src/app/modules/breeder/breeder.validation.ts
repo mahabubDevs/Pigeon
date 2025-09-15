@@ -20,8 +20,7 @@ const createBreederZodSchema = z.object({
     .email("Invalid email address"),
     
   phone: z
-    .string({ required_error: "Phone number is required" })
-    .regex(/^\+?\d{7,15}$/, "Invalid phone number"),
+    .string({ required_error: "Phone number is required" }),
 
     experience: z.string().optional(),
     score: z.number().optional(),

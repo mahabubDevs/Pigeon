@@ -16,14 +16,14 @@ export const BreederController = {
   }),
 
   getAllBreeders: catchAsync(async (req: Request, res: Response) => {
-    const breeders = await BreederService.getAllBreeders();
+    const breeders = await BreederService.getAllBreeders(req.query); // <-- pass query
     sendResponse(res, {
       statusCode: StatusCodes.OK,
       success: true,
       message: "Breeders fetched successfully",
       data: breeders,
     });
-  }),
+}),
 
   getBreederById: catchAsync(async (req: Request, res: Response) => {
     const breeder = await BreederService.getBreederById(req.params.id);
