@@ -11,7 +11,7 @@ export interface IPigeon {
   color?: string;
   catagory?: string;
   pattern?: string;
-  racingRating?: string;
+  racingRating?: number;
   breederRating?: number;
   gender?: "Male" | "Female" | "Unknown";
   status?: string;

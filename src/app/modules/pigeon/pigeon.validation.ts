@@ -23,10 +23,7 @@ export const createPigeonZodSchema = z.object({
     val => (val !== undefined && val !== "" ? Number(val) : undefined),
     z.number({ required_error: "Breeder Rating is required" }).min(0).max(100)
   ),
-  racingRating: z.preprocess(
-    val => (val !== undefined && val !== "" ? String(val) : ""),
-    z.string({ required_error: "Racing Rating is required" })
-  ),
+  racingRating: z.number().optional(),
 
   gender: z.enum(["Cock", "Hen", "Unknown"], { required_error: "Gender is required" }),
   status: z.string({ required_error: "Status is required" }),
@@ -64,5 +61,5 @@ export const updatePigeonZodSchema = z.object({
     val => (val !== undefined && val !== "" ? Number(val) : undefined),
     z.number().min(0).max(100).optional()
   ),
-  racingRating:  z.string().optional(),
+  racingRating:  z.number().optional(),
 })

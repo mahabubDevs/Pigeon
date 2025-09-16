@@ -30,7 +30,7 @@ const createPigeonToDB = async (data: any, files: any, user: any) => {
   const parsedData = { ...data };
 
   // Numeric conversion
- ["birthYear", "racherRating", "breederRating"].forEach(field => {
+ ["birthYear", "racherRating", "breederRating", "racingRating"].forEach(field => {
   if (parsedData[field] !== undefined) parsedData[field] = Number(parsedData[field]);
 });
 // এখানে racingRating নেই, তাই NaN হবে না
@@ -529,12 +529,20 @@ const getMyPigeonsFromDB = async (
 
 const searchPigeonsByNameFromDB = async (query: string) => {
   const pigeons = await Pigeon.find({
-    name: { $regex: query, $options: "i" },
-    status: { $ne: "Deleted" },
-  }).select("_id name");
+    $and: [
+      { status: { $ne: "Deleted" } },
+      {
+        $or: [
+          { name: { $regex: query, $options: "i" } },
+          { ringNumber: { $regex: query, $options: "i" } }
+        ]
+      }
+    ]
+  }).select("_id name ringNumber");
 
   return pigeons;
 };
+
 
 export const PigeonService = {
   createPigeonToDB,

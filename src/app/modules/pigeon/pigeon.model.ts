@@ -1,6 +1,6 @@
 import mongoose, { Schema, Model } from "mongoose";
 import { IPigeon } from "./pigeon.interface";
-import { string } from "zod";
+import { number, string } from "zod";
 
 const pigeonSchema: Schema<IPigeon> = new Schema(
   {
@@ -37,7 +37,7 @@ const pigeonSchema: Schema<IPigeon> = new Schema(
     pattern: {
       type: String,
     },
-    racingRating: { type: String, default: "" },
+    racingRating: { type: Number, default: 0 },
     breederRating: {
       type: Number,
       default: 0,

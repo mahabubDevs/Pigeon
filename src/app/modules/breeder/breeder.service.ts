@@ -19,9 +19,10 @@ interface getAllBreeders {
 
 export const BreederService = {
   createBreeder: async (data: IBreeder): Promise<IBreeder> => {
+    data.status = Boolean(data.status); // force cast
     const result = await Breeder.create(data);
     return result;
-  },
+},
 
   getAllBreeders: async (
   query: getAllBreeders = {}

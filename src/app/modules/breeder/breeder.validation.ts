@@ -25,6 +25,7 @@ const createBreederZodSchema = z.object({
     experience: z.string().optional(),
     score: z.number().optional(),
   gender: z.enum(["Hen", "Cock", "Other"]).optional(),
+  status: z.boolean().optional(),
     
 });
 

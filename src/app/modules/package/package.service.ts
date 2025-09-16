@@ -69,25 +69,67 @@ const createPackageToDB = async (payload: IPackage): Promise<IPackage | null> =>
 
 
 
-const updatePackageToDB = async(id: string, payload: IPackage): Promise<IPackage | null>=>{
-
-    if(!mongoose.Types.ObjectId.isValid(id)){
-        throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid ID")
+const updatePackageToDB = async (id: string, payload: IPackage): Promise<IPackage | null> => {
+    // Step 1: Validate ID
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+        throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid ID");
     }
 
-    const result = await Package.findByIdAndUpdate(
-        {_id: id},
-        payload,
-        { new: true } 
-    );
-
-    if(!result){
-        throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to Update Package")
+    // Step 2: Fetch existing package
+    const existingPackage = await Package.findById(id);
+    if (!existingPackage) {
+        throw new ApiError(StatusCodes.BAD_REQUEST, "Package not found");
     }
 
-    return result;
-}
+    // Step 3: Update Stripe product if title/description/duration changed
+    if (payload.title || payload.description || payload.duration) {
+        await stripe.products.update(existingPackage.productId, {
+            name: payload.title || existingPackage.title,
+            description: payload.description || existingPackage.description,
+        });
+    }
 
+    // Step 4: If price changed, create new Stripe price and new payment link
+    if (payload.price && payload.price !== existingPackage.price) {
+        const newPrice = await stripe.prices.create({
+            unit_amount: payload.price * 100,
+            currency: "usd",
+            product: existingPackage.productId,
+            recurring: {
+                interval: payload.paymentType?.toLowerCase() === "monthly" ? "month" : "year",
+            },
+        });
+
+        // Update payload with new Stripe priceId
+        payload.priceId = newPrice.id;
+
+        // Create new Checkout Session for payment link
+        const session = await stripe.checkout.sessions.create({
+            line_items: [
+                {
+                    price: newPrice.id,
+                    quantity: 1,
+                },
+            ],
+            mode: "subscription",
+            success_url: "https://your-success-url.com",
+            cancel_url: "https://your-cancel-url.com",
+        });
+
+        // TypeScript safe assignment
+        payload.paymentLink = session.url || ""; // যদি null হয়, empty string assign
+    }
+
+    // Step 5: Update MongoDB
+    const updatedPackage = await Package.findByIdAndUpdate(id, payload, { new: true });
+
+    if (!updatedPackage) {
+        throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to update Package");
+    }
+
+    // Step 6: Return all updated data
+    return updatedPackage;
+};
 
 const getPackageFromDB = async(paymentType: string): Promise<IPackage[]>=>{
     const query:any = {
@@ -130,3 +172,54 @@ export const PackageService = {
     getPackageDetailsFromDB,
     deletePackageToDB
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// {
+//   "_id": {
+//     "$oid": "68bfb6ee94c0884e5ce9fa66"
+//   },
+//   "title": "Premium",
+//   "description": "Access to all premium features",
+//   "price": 50,
+//   "duration": "1 year",
+//   "paymentType": "Yearly",
+//   "features": [
+//     "Unlimited Uploaded Pictures",
+//     "Unlimited Access to 100 million stock images",
+//     "Upload custom icons and fonts",
+//     "Unlimited Sharing",
+//     "Upload graphics & video in up to 4k",
+//     "Unlimited Projects",
+//     "Instant Access to our design system",
+//     "Create teams to collaborate on designs"
+//   ],
+//   "productId": "prod_T1MYleyJMnuNBX",
+//   "priceId": "price_1S5JpkFx93ct4nNrokyT1CeN",
+//   "loginLimit": 5,
+//   "paymentLink": "https://buy.stripe.com/test_8x200jb8p2rr79odzWd7q0y",
+//   "status": "Active",
+//   "admin": {
+//     "$oid": "68be67aa22264173e590b384"
+//   },
+//   "createdAt": {
+//     "$date": "2025-09-09T05:11:10.468Z"
+//   },
+//   "updatedAt": {
+//     "$date": "2025-09-09T10:01:45.622Z"
+//   },
+//   "__v": 0
+// }

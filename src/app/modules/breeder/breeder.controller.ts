@@ -6,6 +6,7 @@ import { BreederService } from "./breeder.service";
 
 export const BreederController = {
   createBreeder: catchAsync(async (req: Request, res: Response) => {
+    console.log("Status received:", req.body.status, typeof req.body.status);
     const breeder = await BreederService.createBreeder(req.body);
     sendResponse(res, {
       statusCode: StatusCodes.CREATED,
