@@ -27,12 +27,17 @@ const createPigeon = catchAsync(async (req: Request, res: Response) => {
 
 const updatePigeon = catchAsync(async (req: Request, res: Response) => {
   const pigeonId = req.params.id;
-  const deletedIndexes: number[] = req.body.deletedIndexes || []; // default empty array if not provided
+
+  // Parse deletedIndexes from body
+  const deletedIndexes: number[] = req.body.deletedIndexes || [];
+
+  // Pass data directly (req.body can contain all fields to update)
+  const data = req.body.data || req.body; // fallback to req.body if no data field
+
   const result = await PigeonService.updatePigeonToDB(
     pigeonId,
-    req.body.data,
+    data,
     req.files,
-    deletedIndexes,
     req.user
   );
 
@@ -43,6 +48,7 @@ const updatePigeon = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
+
 
 // Get all pigeons
 

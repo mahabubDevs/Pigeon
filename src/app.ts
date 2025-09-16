@@ -44,8 +44,8 @@ app.use(
 );
 
 //  Passport initialize
-// app.use(passport.initialize());
-// app.use(passport.session());
+app.use(passport.initialize());
+app.use(passport.session());
 
 // 🔹 Worker PID logging middleware
 app.use((req: Request, res: Response, next) => {

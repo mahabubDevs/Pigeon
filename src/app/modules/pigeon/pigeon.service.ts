@@ -44,17 +44,23 @@ const createPigeonToDB = async (data: any, files: any, user: any) => {
   }
 
   // Father/Mother Ring
-  if (parsedData.fatherRingId) {
+  if (parsedData.fatherRingId && parsedData.fatherRingId.trim() !== "") {
     const father = await Pigeon.findOne({ ringNumber: parsedData.fatherRingId });
     if (!father) throw new ApiError(StatusCodes.BAD_REQUEST, "Father pigeon not found");
     parsedData.fatherRingId = father._id;
-  }
+} else {
+    // যদি blank বা empty string আসে, DB তে null/undefined রাখতে পারো
+    parsedData.fatherRingId = null;
+}
 
-  if (parsedData.motherRingId) {
+  if (parsedData.motherRingId && parsedData.motherRingId.trim() !== "") {
     const mother = await Pigeon.findOne({ ringNumber: parsedData.motherRingId });
     if (!mother) throw new ApiError(StatusCodes.BAD_REQUEST, "Mother pigeon not found");
     parsedData.motherRingId = mother._id;
-  }
+} else {
+    // যদি blank string বা empty string আসে, DB তে null রাখো
+    parsedData.motherRingId = null;
+}
 
   // Handle photos
   const photos: string[] = [];
@@ -87,59 +93,94 @@ const updatePigeonToDB = async (
   pigeonId: string,
   data: any,
   files: any,
-  deletedIndexes: number[],
   user: any
 ): Promise<IPigeon> => {
-  const pigeon = await Pigeon.findById(pigeonId);
-  if (!pigeon) {
-    throw new ApiError(StatusCodes.NOT_FOUND, "Pigeon not found");
-  }
+  if (!pigeonId) throw new ApiError(StatusCodes.BAD_REQUEST, "Pigeon ID is required");
+  if (!data) throw new ApiError(StatusCodes.BAD_REQUEST, "Data field is required");
 
-  // Step 1: Parse JSON data
-  let parsedData: any = {};
-  if (data) {
+  // Fetch existing pigeon
+  const pigeon = await Pigeon.findById(pigeonId);
+  if (!pigeon) throw new ApiError(StatusCodes.NOT_FOUND, "Pigeon not found");
+
+  // Parse JSON string if needed
+  let parsedData: any = data;
+  if (typeof data === "string") {
     try {
       parsedData = JSON.parse(data);
-    } catch {
+    } catch (err) {
       throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid JSON data");
     }
   }
 
+  // Admin/SuperAdmin check for special fields
   if (user.role !== "ADMIN" && user.role !== "SUPER_ADMIN") {
     delete parsedData.verified;
     delete parsedData.iconic;
     delete parsedData.iconicScore;
   }
 
-  // Step 2: Remove images according to deletedIndexes
+  // Convert numeric fields
+  ["birthYear", "racerRating", "breederRating", "racingRating"].forEach(field => {
+    if (parsedData[field] !== undefined) parsedData[field] = Number(parsedData[field]);
+  });
+
+  // Update fatherRingId
+  if (parsedData.fatherRingId && parsedData.fatherRingId.trim() !== "") {
+    const father = await Pigeon.findOne({ ringNumber: parsedData.fatherRingId });
+    if (!father) throw new ApiError(StatusCodes.BAD_REQUEST, "Father pigeon not found");
+    parsedData.fatherRingId = father._id;
+  } else {
+    parsedData.fatherRingId = null; // allow clearing
+  }
+
+  // Update motherRingId
+  if (parsedData.motherRingId && parsedData.motherRingId.trim() !== "") {
+    const mother = await Pigeon.findOne({ ringNumber: parsedData.motherRingId });
+    if (!mother) throw new ApiError(StatusCodes.BAD_REQUEST, "Mother pigeon not found");
+    parsedData.motherRingId = mother._id;
+  } else {
+    parsedData.motherRingId = null; // allow clearing
+  }
+
+  // Handle photos
   let currentPhotos = pigeon.photos || [];
-  if (deletedIndexes.length > 0) {
+  if (parsedData.deletedIndexes && Array.isArray(parsedData.deletedIndexes)) {
     currentPhotos = currentPhotos.filter(
-      (_, idx) => !deletedIndexes.includes(idx)
+      (_, idx) => !parsedData.deletedIndexes.includes(idx)
     );
   }
 
-  // Step 3: Add new uploaded files
   if (files) {
-    const filesArray: Express.Multer.File[] = Object.values(
-      files
-    ).flat() as Express.Multer.File[];
-    const newPhotos = filesArray.map((file) => file.path.replace(/\\/g, "/"));
+    const filesArray: Express.Multer.File[] = Object.values(files).flat() as Express.Multer.File[];
+    const newPhotos = filesArray.map(file => `/images/${file.filename}`);
     currentPhotos = currentPhotos.concat(newPhotos);
   }
+  parsedData.photos = currentPhotos;
 
-  // Step 4: Merge payload
+  // Merge payload with existing pigeon data
   const payload: Partial<IPigeon> = {
-    ...parsedData,
-    photos: currentPhotos,
+    ...pigeon.toObject(), // Start from existing data
+    ...parsedData,        // Overwrite with new data
   };
 
-  // Step 5: Update DB
+  // Update DB
   const updatedPigeon = await Pigeon.findByIdAndUpdate(pigeonId, payload, {
     new: true,
   });
-  return updatedPigeon!;
+
+  if (!updatedPigeon) throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to update pigeon");
+
+  // Notification
+  await NotificationService.createNotificationToDB({
+    text: `Pigeon updated by ${user.name}`,
+    type: "ADMIN",
+    referenceId: pigeon._id.toString(),
+    read: false,
+  });
+
+  return updatedPigeon;
 };
+
 
 // Get All Pigeons
 
