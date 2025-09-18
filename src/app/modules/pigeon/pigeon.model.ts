@@ -65,9 +65,15 @@ const pigeonSchema: Schema<IPigeon> = new Schema(
         type: String, // photo URL store 
       },
     ],
-    results: {
-      type: String, // client text store
-    },
+    results: [
+      {
+        name: { type: String,  },
+        date: { type: Date,  },
+        distance: { type: String,},
+        total: { type: Number,  },
+        place: { type: String,},
+      },
+    ],
     fatherRingId: {
       type: Schema.Types.ObjectId,
       ref: "Pigeon",

@@ -27,14 +27,12 @@ const createPigeonToDB = async (data: any, files: any, user: any) => {
       throw new ApiError(StatusCodes.FORBIDDEN, "Free users can only add up to 50 pigeons");
   }
 
-  const parsedData = { ...data };
+  const parsedData: any = { ...data };
 
   // Numeric conversion
- ["birthYear", "racherRating", "breederRating", "racingRating"].forEach(field => {
-  if (parsedData[field] !== undefined) parsedData[field] = Number(parsedData[field]);
-});
-// এখানে racingRating নেই, তাই NaN হবে না
-
+  ["birthYear", "racerRating", "breederRating", "racingRating"].forEach(field => {
+    if (parsedData[field] !== undefined) parsedData[field] = Number(parsedData[field]);
+  });
 
   // Free user restrictions
   if (!["ADMIN", "SUPER_ADMIN"].includes(user.role)) {
@@ -48,27 +46,39 @@ const createPigeonToDB = async (data: any, files: any, user: any) => {
     const father = await Pigeon.findOne({ ringNumber: parsedData.fatherRingId });
     if (!father) throw new ApiError(StatusCodes.BAD_REQUEST, "Father pigeon not found");
     parsedData.fatherRingId = father._id;
-} else {
-    // যদি blank বা empty string আসে, DB তে null/undefined রাখতে পারো
+  } else {
     parsedData.fatherRingId = null;
-}
+  }
 
   if (parsedData.motherRingId && parsedData.motherRingId.trim() !== "") {
     const mother = await Pigeon.findOne({ ringNumber: parsedData.motherRingId });
     if (!mother) throw new ApiError(StatusCodes.BAD_REQUEST, "Mother pigeon not found");
     parsedData.motherRingId = mother._id;
-} else {
-    // যদি blank string বা empty string আসে, DB তে null রাখো
+  } else {
     parsedData.motherRingId = null;
-}
+  }
 
   // Handle photos
   const photos: string[] = [];
-  if (files) {
+  if (files && Object.keys(files).length > 0) {
     const filesArray: Express.Multer.File[] = Object.values(files).flat() as Express.Multer.File[];
     filesArray.forEach(file => photos.push(`/images/${file.filename}`));
   }
   parsedData.photos = photos;
+
+  // Handle optional results array
+  if (!parsedData.results) {
+    parsedData.results = []; // empty array if not provided
+  } else if (typeof parsedData.results === "string") {
+    try {
+      parsedData.results = JSON.parse(parsedData.results);
+      if (!Array.isArray(parsedData.results)) parsedData.results = [];
+    } catch {
+      parsedData.results = [];
+    }
+  } else if (!Array.isArray(parsedData.results)) {
+    parsedData.results = [];
+  }
 
   // Save to DB
   const payload = { ...parsedData, user: user._id };
@@ -85,6 +95,7 @@ const createPigeonToDB = async (data: any, files: any, user: any) => {
 
   return result;
 };
+
 
 
 
@@ -379,7 +390,9 @@ const getSiblings = async (pigeonId: string) => {
     _id: { $ne: pigeon._id },
     fatherRingId: fatherId,
     motherRingId: motherId,
-  }).lean();
+  }).sort({ createdAt: -1 }) // latest first
+    .limit(5)
+    .lean();
 
   // Step 3: Half-siblings (same father OR same mother, but not both)
   const halfSiblings = await Pigeon.find({
@@ -388,7 +401,9 @@ const getSiblings = async (pigeonId: string) => {
       { fatherRingId: fatherId, motherRingId: { $ne: motherId } },
       { motherRingId: motherId, fatherRingId: { $ne: fatherId } },
     ],
-  }).lean();
+  }).sort({ createdAt: -1 }) // latest first
+    .limit(5)
+    .lean();
 
   return {
     pigeon,

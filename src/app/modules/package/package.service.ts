@@ -69,67 +69,68 @@ const createPackageToDB = async (payload: IPackage): Promise<IPackage | null> =>
 
 
 
-const updatePackageToDB = async (id: string, payload: IPackage): Promise<IPackage | null> => {
-    // Step 1: Validate ID
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-        throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid ID");
-    }
+const updatePackageToDB = async (
+  id: string,
+  payload: IPackage
+): Promise<IPackage | null> => {
+  // Step 1: Validate ID
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid ID");
+  }
 
-    // Step 2: Fetch existing package
-    const existingPackage = await Package.findById(id);
-    if (!existingPackage) {
-        throw new ApiError(StatusCodes.BAD_REQUEST, "Package not found");
-    }
+  // Step 2: Fetch existing package
+  const existingPackage = await Package.findById(id);
+  if (!existingPackage) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, "Package not found");
+  }
 
-    // Step 3: Update Stripe product if title/description/duration changed
-    if (payload.title || payload.description || payload.duration) {
-        await stripe.products.update(existingPackage.productId, {
-            name: payload.title || existingPackage.title,
-            description: payload.description || existingPackage.description,
-        });
-    }
+  // Step 3: Update Stripe product if title/description changed
+  if (payload.title || payload.description) {
+    await stripe.products.update(existingPackage.productId, {
+      name: payload.title || existingPackage.title,
+      description: payload.description || existingPackage.description,
+    });
+  }
 
-    // Step 4: If price changed, create new Stripe price and new payment link
-    if (payload.price && payload.price !== existingPackage.price) {
-        const newPrice = await stripe.prices.create({
-            unit_amount: payload.price * 100,
-            currency: "usd",
-            product: existingPackage.productId,
-            recurring: {
-                interval: payload.paymentType?.toLowerCase() === "monthly" ? "month" : "year",
-            },
-        });
+  // Step 4: If price changed, create new Stripe price and permanent payment link
+  if (payload.price && payload.price !== existingPackage.price) {
+    const newPrice = await stripe.prices.create({
+      unit_amount: payload.price * 100, // price in cents
+      currency: "usd",
+      product: existingPackage.productId,
+      recurring: {
+        interval: payload.paymentType?.toLowerCase() === "monthly" ? "month" : "year",
+      },
+    });
 
-        // Update payload with new Stripe priceId
-        payload.priceId = newPrice.id;
+    // Update payload with new Stripe priceId
+    payload.priceId = newPrice.id;
 
-        // Create new Checkout Session for payment link
-        const session = await stripe.checkout.sessions.create({
-            line_items: [
-                {
-                    price: newPrice.id,
-                    quantity: 1,
-                },
-            ],
-            mode: "subscription",
-            success_url: "https://your-success-url.com",
-            cancel_url: "https://your-cancel-url.com",
-        });
+    // ✅ Create permanent Payment Link (not session)
+    const paymentLink = await stripe.paymentLinks.create({
+      line_items: [
+        {
+          price: newPrice.id,
+          quantity: 1,
+        },
+      ],
+    });
 
-        // TypeScript safe assignment
-        payload.paymentLink = session.url || ""; // যদি null হয়, empty string assign
-    }
+    // Save permanent payment link
+    payload.paymentLink = paymentLink.url;
+  }
 
-    // Step 5: Update MongoDB
-    const updatedPackage = await Package.findByIdAndUpdate(id, payload, { new: true });
+  // Step 5: Update MongoDB
+  const updatedPackage = await Package.findByIdAndUpdate(id, payload, { new: true });
 
-    if (!updatedPackage) {
-        throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to update Package");
-    }
+  if (!updatedPackage) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to update Package");
+  }
 
-    // Step 6: Return all updated data
-    return updatedPackage;
+  // Step 6: Return all updated data
+  return updatedPackage;
 };
+
 
 const getPackageFromDB = async(paymentType: string): Promise<IPackage[]>=>{
     const query:any = {

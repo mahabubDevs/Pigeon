@@ -19,7 +19,13 @@ export interface IPigeon {
   racerRating?: number;
   notes?: string;
   photos?: string[]; // multiple photo url
-  results?: string; // details text
+  results?: {
+    name: string;
+    date: Date;
+    distance: string; // string now
+    total: number;
+    place: string; // string now
+  }[]; // race result-এর array
   fatherRingId?: mongoose.Types.ObjectId; //  pigeon এর ref
   motherRingId?: mongoose.Types.ObjectId; //  pigeon এর ref
   verified?: boolean; // admin verify 

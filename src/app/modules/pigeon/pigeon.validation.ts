@@ -1,5 +1,17 @@
 import { z } from "zod";
 
+// Race result object schema
+const raceResultSchema = z.object({
+  name: z.string({ required_error: "Race name is required" }),
+  date: z.preprocess(
+    val => (val ? new Date(val as string) : undefined),
+    z.date({ required_error: "Race date is required" })
+  ),
+  distance: z.string({ required_error: "Distance is required" }),
+  total: z.number({ required_error: "Total is required" }).int(),
+  place: z.string({ required_error: "Place is required" }),
+});
+
 export const createPigeonZodSchema = z.object({
   ringNumber: z.string({ required_error: "Ring Number is required" }),
   name: z.string({ required_error: "Name is required" }),
@@ -24,7 +36,6 @@ export const createPigeonZodSchema = z.object({
     z.number({ required_error: "Breeder Rating is required" }).min(0).max(100)
   ),
   racingRating: z.number().optional(),
-
   gender: z.enum(["Cock", "Hen", "Unknown"], { required_error: "Gender is required" }),
   status: z.string({ required_error: "Status is required" }),
   location: z.string({ required_error: "Location is required" }),
@@ -33,13 +44,22 @@ export const createPigeonZodSchema = z.object({
   iconicScore: z.number().optional(), // Admin can set
   notes: z.string().optional(),
   photos: z.array(z.string()).min(1, "At least one photo is required"),
-  results: z.string().optional(),
+  results: z
+    .preprocess((val) => {
+      if (!val) return undefined; // results না দিলে optional
+      if (typeof val === "string") {
+        try {
+          return JSON.parse(val); // string → array of objects
+        } catch {
+          return [];
+        }
+      }
+      return val;
+    }, z.array(raceResultSchema).nonempty({ message: "Results objects are required if results is provided" }))
+    .optional(),
   fatherRingId: z.string().optional(),
   motherRingId: z.string().optional(),
 });
-
-
-
 
 export const updatePigeonZodSchema = z.object({
   ringNumber: z.string().optional(),
@@ -61,5 +81,18 @@ export const updatePigeonZodSchema = z.object({
     val => (val !== undefined && val !== "" ? Number(val) : undefined),
     z.number().min(0).max(100).optional()
   ),
-  racingRating:  z.number().optional(),
-})
+  racingRating: z.number().optional(),
+  results: z
+    .preprocess((val) => {
+      if (!val) return undefined;
+      if (typeof val === "string") {
+        try {
+          return JSON.parse(val);
+        } catch {
+          return [];
+        }
+      }
+      return val;
+    }, z.array(raceResultSchema).nonempty({ message: "Results objects are required if results is provided" }))
+    .optional(),
+});
