@@ -30,6 +30,7 @@ export const DashboardService = {
       .populate([
         { path: "fatherRingId", select: "ringNumber name" },
         { path: "motherRingId", select: "ringNumber name" },
+        { path: "breeder", select: "breederName" }
       ]);
 
     return {

@@ -214,10 +214,11 @@ const getAllPigeonsFromDB = async (
       qb.sort()
     .paginate()
     .fields()
-    .populate(["user", "fatherRingId", "motherRingId"], {
+    .populate(["user", "fatherRingId", "motherRingId", "breeder"], {
       user: "name email",
       fatherRingId: "ringNumber name",
       motherRingId: "ringNumber name",
+      breeder: "breederName"
     });
 
   // Execute query
@@ -231,6 +232,51 @@ const getAllPigeonsFromDB = async (
   return { pagination ,data  };
 };
 
+
+// const getAllPigeonsFromDB = async (
+//   query: any
+// ): Promise<{ data: IPigeon[]; pagination: any }> => {
+//   let baseQuery = Pigeon.find({ status: { $ne: "Deleted" } });
+
+//   const qb = new QueryBuilder<IPigeon>(baseQuery, query);
+
+//   qb.search(["ringNumber", "name", "country", "breeder"])
+//     .filter();
+
+//   // Explicit status filter
+//   if (query.status) {
+//     qb.modelQuery = qb.modelQuery.where({
+//       status: new RegExp(`^${query.status}$`, "i") // case-insensitive exact match
+//     });
+//   }
+
+//   qb.sort()
+//     .paginate()
+//     .fields()
+//     .populate([
+//       "user",
+//       "fatherRingId",
+//       "motherRingId",
+//       "breeder" // <-- breeder add করা হলো
+//     ], {
+//       user: "name email",
+//       fatherRingId: "ringNumber name",
+//       motherRingId: "ringNumber name",
+//       breeder: "name" // <-- breeder থেকে শুধু name দেখাবে
+//     });
+
+//   // Execute query
+//   const dataRaw = await qb.modelQuery.lean();
+
+//   // Safe type assertion
+//   const data: IPigeon[] = dataRaw as unknown as IPigeon[];
+
+//   const pagination = await qb.getPaginationInfo();
+
+//   return { pagination, data };
+// };
+
+
 // Get Single Pigeon Details
 
 const getPigeonDetailsFromDB = async (id: string): Promise<IPigeon | null> => {
@@ -241,7 +287,9 @@ const getPigeonDetailsFromDB = async (id: string): Promise<IPigeon | null> => {
   const result = await Pigeon.findById(id)
     .populate("user")
     .populate("fatherRingId")
-    .populate("motherRingId");
+    .populate("motherRingId")
+    .populate("breeder")
+    ;
 
   if (!result) {
     throw new ApiError(StatusCodes.NOT_FOUND, "Pigeon not found");
@@ -275,10 +323,11 @@ const getMyAllPigeonDetailsFromDB = async (
   qb.sort()
     .paginate()
     .fields()
-    .populate(["user", "fatherRingId", "motherRingId"], {
+    .populate(["user", "fatherRingId", "motherRingId","breeder"], {
       user: "name email",
       fatherRingId: "ringNumber name",
       motherRingId: "ringNumber name",
+      breeder: "breederName"
     });
 
   // Execute query
@@ -574,7 +623,7 @@ const getMyPigeonsFromDB = async (
     .sort()
     .paginate()
     .fields()
-    .populate(["fatherRingId", "motherRingId"], {});
+    .populate(["fatherRingId", "motherRingId","breeder"], {});
 
   const dataRaw = await qb.modelQuery.lean();
   const data: IPigeon[] = dataRaw as unknown as IPigeon[];

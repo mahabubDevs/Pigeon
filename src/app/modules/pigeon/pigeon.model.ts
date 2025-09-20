@@ -29,7 +29,8 @@ const pigeonSchema: Schema<IPigeon> = new Schema(
       type: String,
     },
     breeder: {
-      type: String,
+      type: Schema.Types.ObjectId,
+      ref: "Breeder",
     },
     color: {
       type: String,
