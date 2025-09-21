@@ -16,7 +16,7 @@ export interface IPigeon {
   gender?: "Male" | "Female" | "Unknown";
   status?: string;
   location?: string;
-  racerRating?: number;
+  racherRating?: string;
   notes?: string;
   photos?: string[]; // multiple photo url
   results?: {

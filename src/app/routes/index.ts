@@ -12,12 +12,16 @@ import { NotificationRoutes } from '../modules/notification/notification.routes'
 import { DashboardRoutes } from '../modules/dashbordOverview/dashboard.routes';
 import { AnalyticRoutes } from '../modules/analytics/analytic.route';
 import { UserSubscriptionRoutes } from '../modules/userEmailSubscripton/userEmailSubscripton.routes';
+import { RuleRoute } from '../modules/rule/rule.route';
+import { ContactRoute } from '../modules/contactUs/contact.routes';
 
 const router = express.Router();
 
 const apiRoutes = [
     { path: "/user", route: UserRoutes },
     { path: "/auth", route: AuthRoutes },
+    { path: "/rule", route: RuleRoute },
+    { path: "/contact", route: ContactRoute },
     { path: "/package", route: PackageRoutes },
     { path: "/pigeon", route: PigeonRoutes },
     { path: "/subscription", route: SubscriptionRoutes },

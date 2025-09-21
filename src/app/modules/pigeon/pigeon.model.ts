@@ -54,9 +54,9 @@ const pigeonSchema: Schema<IPigeon> = new Schema(
     location: {
       type: String,
     },
-    racerRating: {
-      type: Number,
-      default: 0,
+    racherRating: {
+      type: String,
+      
     },
     notes: {
       type: String,

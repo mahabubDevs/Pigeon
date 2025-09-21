@@ -1,0 +1,144 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql" // অথবা তোমার ব্যবহার অনুযায়ী পরিবর্তন করো
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String      @id @default(uuid())
+  name            String?
+  email           String?     @unique
+  password        String?
+  role            String      @default("USER")
+  customeRole     String?
+  contact         String?
+  location        String?
+  profile         String?
+  verified        Boolean     @default(false)
+  status          Boolean     @default(true)
+  stripeAccountId String?
+
+  authentication  Json?
+  accountInformation Json?
+  pages           String[]
+
+  // Relations
+  pigeons         Pigeon[]
+  subscriptions   Subscription[]
+  packagesAdmin   Package[]    @relation("AdminPackages")
+  notifications   Notification[] @relation("UserNotifications")
+}
+
+model Pigeon {
+  id             String    @id @default(uuid())
+  userId         String
+  user           User      @relation(fields: [userId], references: [id])
+  ringNumber     String    @unique
+  name           String?
+  country        String
+  birthYear      Int
+  shortInfo      String?
+  breederId      String?
+  breeder        Breeder?  @relation(fields: [breederId], references: [id])
+  color          String?
+  pattern        String?
+  racingRating   Int       @default(0)
+  breederRating  Int       @default(0)
+  racherRating   String?
+  gender         String    @default("Unknown")
+  status         String?
+  location       String?
+  notes          String?
+  photos         String[]
+  results        Json?
+  fatherId       String?
+  father         Pigeon?   @relation("FatherRelation", fields: [fatherId], references: [id])
+  motherId       String?
+  mother         Pigeon?   @relation("MotherRelation", fields: [motherId], references: [id])
+  catagory       String    @default("Other")
+  verified       Boolean   @default(false)
+  iconic         Boolean   @default(false)
+  iconicScore    Int       @default(0)
+
+  childrenFather Pigeon[]  @relation("FatherRelation")
+  childrenMother Pigeon[]  @relation("MotherRelation")
+}
+
+model Breeder {
+  id           String   @id @default(uuid())
+  loftName     String
+  breederName  String
+  country      String?
+  email        String   @unique
+  phone        String?
+  status       Boolean  @default(false)
+  experience   String   @default("none")
+  score        Int      @default(0)
+  gender       String   @default("Other")
+
+  pigeons      Pigeon[]
+}
+
+model Package {
+  id          String      @id @default(uuid())
+  title       String
+  description String
+  price       Float
+  duration    String
+  paymentType String
+  features    String[]
+  productId   String
+  priceId     String
+  loginLimit  Int
+  paymentLink String
+  status      String      @default("Active")
+  payoutAccountId String?
+
+  adminId     String
+  admin       User        @relation("AdminPackages", fields: [adminId], references: [id])
+
+  subscriptions Subscription[]
+}
+
+model Subscription {
+  id               String    @id @default(uuid())
+  customerId       String
+  price            Float
+  userId           String
+  user             User      @relation(fields: [userId], references: [id])
+  packageId        String
+  package          Package   @relation(fields: [packageId], references: [id])
+  trxId            String
+  subscriptionId   String
+  currentPeriodStart String
+  currentPeriodEnd String
+  remaining        Int
+  status           String    @default("active")
+}
+
+model Notification {
+  id          String    @id @default(uuid())
+  text        String
+  receiverId  String?
+  receiver    User?     @relation("UserNotifications", fields: [receiverId], references: [id])
+  referenceId String?
+  screen      String?
+  read        Boolean   @default(false)
+  type        String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Role {
+  id        String   @id @default(uuid())
+  roleName  String   @unique
+}
+
+model Rule {
+  id        String   @id @default(uuid())
+  content   String
+  type      String
+}

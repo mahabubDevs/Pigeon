@@ -30,9 +30,11 @@ const createPigeonToDB = async (data: any, files: any, user: any) => {
   const parsedData: any = { ...data };
 
   // Numeric conversion
-  ["birthYear", "racerRating", "breederRating", "racingRating"].forEach(field => {
-    if (parsedData[field] !== undefined) parsedData[field] = Number(parsedData[field]);
-  });
+["birthYear", "racerRating", "breederRating", "racingRating"].forEach(field => {
+    if (parsedData[field] !== undefined) {
+        parsedData[field] = Number(parsedData[field]);
+    }
+});
 
   // Free user restrictions
   if (!["ADMIN", "SUPER_ADMIN"].includes(user.role)) {
@@ -153,20 +155,23 @@ const updatePigeonToDB = async (
     parsedData.motherRingId = null; // allow clearing
   }
 
-  // Handle photos
-  let currentPhotos = pigeon.photos || [];
-  if (parsedData.deletedIndexes && Array.isArray(parsedData.deletedIndexes)) {
-    currentPhotos = currentPhotos.filter(
-      (_, idx) => !parsedData.deletedIndexes.includes(idx)
-    );
-  }
+ // --- Handle photos ---
+  let currentPhotos: string[] = [];
 
-  if (files) {
+  if (files && Object.keys(files).length > 0) {
+    // নতুন ছবি থাকলে → শুধু unique image save করবো
     const filesArray: Express.Multer.File[] = Object.values(files).flat() as Express.Multer.File[];
     const newPhotos = filesArray.map(file => `/images/${file.filename}`);
-    currentPhotos = currentPhotos.concat(newPhotos);
+
+    // remove duplicates using Set
+    currentPhotos = Array.from(new Set(newPhotos));
+  } else {
+    // কোনো ছবি না দিলে → photos ফাঁকা হবে
+    currentPhotos = [];
   }
+
   parsedData.photos = currentPhotos;
+
 
   // Merge payload with existing pigeon data
   const payload: Partial<IPigeon> = {
@@ -202,7 +207,7 @@ const getAllPigeonsFromDB = async (
 
   const qb = new QueryBuilder<IPigeon>(baseQuery, query);
 
-  qb.search(["ringNumber", "name", "country", "breeder"])
+  qb.search(["ringNumber", "name", "country",])
     .filter();
      // Step 3: Explicit status filter
   if (query.status) {
@@ -309,7 +314,7 @@ const getMyAllPigeonDetailsFromDB = async (
   const qb = new QueryBuilder<IPigeon>(baseQuery, query);
 
   // Step 2: Search only on these fields (exclude status from search)
-  qb.search(["ringNumber", "name", "country", "breeder"])
+  qb.search(["ringNumber", "name", "country", ])
     .filter(); // other filters except status
 
   // Step 3: Explicit status filter
@@ -426,9 +431,44 @@ const getPigeonWithFamily = async (pigeonId: string, maxDepth = 5) => {
 //   return buildFamily(basePigeon);
 // };
 
+// const getSiblings = async (pigeonId: string) => {
+//   // Step 1: Find the pigeon
+//   const pigeon = await Pigeon.findById(pigeonId);
+//   if (!pigeon) throw new ApiError(StatusCodes.NOT_FOUND, "Pigeon not found");
+
+//   const fatherId = pigeon.fatherRingId;
+//   const motherId = pigeon.motherRingId;
+
+//   // Step 2: Full siblings (same father & same mother)
+//   const fullSiblings = await Pigeon.find({
+//     _id: { $ne: pigeon._id },
+//     fatherRingId: fatherId,
+//     motherRingId: motherId,
+//   }).sort({ createdAt: -1 }) // latest first
+//     .limit(5)
+//     .lean();
+
+//   // Step 3: Half-siblings (same father OR same mother, but not both)
+//   const halfSiblings = await Pigeon.find({
+//     _id: { $ne: pigeon._id },
+//     $or: [
+//       { fatherRingId: fatherId, motherRingId: { $ne: motherId } },
+//       { motherRingId: motherId, fatherRingId: { $ne: fatherId } },
+//     ],
+//   }).sort({ createdAt: -1 }) // latest first
+//     .limit(5)
+//     .lean();
+
+//   return {
+//     pigeon,
+//     fullSiblings,
+//     halfSiblings,
+//   };
+// };
+
 const getSiblings = async (pigeonId: string) => {
   // Step 1: Find the pigeon
-  const pigeon = await Pigeon.findById(pigeonId);
+  const pigeon = await Pigeon.findById(pigeonId).lean();
   if (!pigeon) throw new ApiError(StatusCodes.NOT_FOUND, "Pigeon not found");
 
   const fatherId = pigeon.fatherRingId;
@@ -439,7 +479,8 @@ const getSiblings = async (pigeonId: string) => {
     _id: { $ne: pigeon._id },
     fatherRingId: fatherId,
     motherRingId: motherId,
-  }).sort({ createdAt: -1 }) // latest first
+  })
+    .sort({ createdAt: -1 })
     .limit(5)
     .lean();
 
@@ -450,16 +491,22 @@ const getSiblings = async (pigeonId: string) => {
       { fatherRingId: fatherId, motherRingId: { $ne: motherId } },
       { motherRingId: motherId, fatherRingId: { $ne: fatherId } },
     ],
-  }).sort({ createdAt: -1 }) // latest first
+  })
+    .sort({ createdAt: -1 })
     .limit(5)
     .lean();
 
-  return {
-    pigeon,
-    fullSiblings,
-    halfSiblings,
-  };
+  // Step 4: Map type to each sibling
+  const siblings = [
+    ...fullSiblings.map((s) => ({ ...s, type: "fullSibling" })),
+    ...halfSiblings.map((s) => ({ ...s, type: "halfSibling" })),
+  ];
+
+  return siblings;
 };
+
+
+
 
 // Import pigeons from Excel file
 const importFromExcel = async (filePath: string, user: any) => {
@@ -574,7 +621,7 @@ const exportToPDF = async (query: any): Promise<Buffer> => {
 
   // Step 2: Apply search, filter, sort, pagination
   const qb = new QueryBuilder<IPigeon>(baseQuery, query);
-  qb.search(["ringNumber", "name", "country", "breeder"])
+  qb.search(["ringNumber", "name", "country", ])
     .filter()
     .sort()
     .paginate() // page & limit support
@@ -618,7 +665,7 @@ const getMyPigeonsFromDB = async (
 
   const qb = new QueryBuilder<IPigeon>(baseQuery, query);
 
-  qb.search(["ringNumber", "name", "country", "breeder"])
+  qb.search(["ringNumber", "name", "country", ])
     .filter()
     .sort()
     .paginate()
@@ -631,6 +678,12 @@ const getMyPigeonsFromDB = async (
 
   return { data, pagination };
 };
+
+
+
+
+
+
 
 const searchPigeonsByNameFromDB = async (query: string) => {
   const pigeons = await Pigeon.find({
@@ -649,6 +702,21 @@ const searchPigeonsByNameFromDB = async (query: string) => {
 };
 
 
+
+const togglePigeonStatusInDB = async (pigeonId: string) => {
+  const pigeon = await Pigeon.findById(pigeonId);
+  if (!pigeon) throw new ApiError(StatusCodes.NOT_FOUND, "Pigeon not found");
+
+  // Toggle status
+  pigeon.status = pigeon.status === "active" ? "inactive" : "active";
+  await pigeon.save();
+
+  return {
+    id: pigeon._id.toString(),
+    status: pigeon.status,
+  };
+};
+
 export const PigeonService = {
   createPigeonToDB,
   updatePigeonToDB,
@@ -662,4 +730,5 @@ export const PigeonService = {
   getMyPigeonsFromDB,
   searchPigeonsByNameFromDB,
   getMyAllPigeonDetailsFromDB,
+  togglePigeonStatusInDB
 };

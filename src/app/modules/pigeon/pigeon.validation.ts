@@ -27,10 +27,11 @@ export const createPigeonZodSchema = z.object({
   breeder: z.string({ required_error: "Breeder is required" }),
   color: z.string({ required_error: "Color is required" }),
   pattern: z.string().optional(),
-  racherRating: z.preprocess(
-    val => (val !== undefined && val !== "" ? Number(val) : undefined),
-    z.number({ required_error: "Racher Rating is required" }).min(0).max(100)
-  ),
+  // racherRating: z.preprocess(
+  //   val => (val !== undefined && val !== "" ? Number(val) : undefined),
+  //   z.number({ required_error: "Racher Rating is required" }).min(0).max(100)
+  // ),
+  racherRating: z.string().optional(),
   breederRating: z.preprocess(
     val => (val !== undefined && val !== "" ? Number(val) : undefined),
     z.number({ required_error: "Breeder Rating is required" }).min(0).max(100)
@@ -73,10 +74,11 @@ export const updatePigeonZodSchema = z.object({
   breeder: z.string().optional(),
   color: z.string().optional(),
   pattern: z.string().optional(),
-  racherRating: z.preprocess(
-    val => (val !== undefined && val !== "" ? Number(val) : undefined),
-    z.number().min(0).max(100).optional()
-  ),
+  racherRating: z.string().optional(),
+  // racherRating: z.preprocess(
+  //   val => (val !== undefined && val !== "" ? Number(val) : undefined),
+  //   z.number().min(0).max(100).optional()
+  // ),
   breederRating: z.preprocess(
     val => (val !== undefined && val !== "" ? Number(val) : undefined),
     z.number().min(0).max(100).optional()

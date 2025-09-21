@@ -108,17 +108,30 @@ const getPigeonWithFamily = catchAsync(async (req, res) => {
 });
 
 // Get siblings of a pigeon
+// const getSiblingsController = catchAsync(async (req, res) => {
+//   const pigeonId = req.params.id;
+//   const data = await PigeonService.getSiblings(pigeonId);
+
+//   sendResponse(res, {
+//     statusCode: 200,
+//     success: true,
+//     message: "Siblings fetched successfully",
+//     data,
+//   });
+// });
+
 const getSiblingsController = catchAsync(async (req, res) => {
   const pigeonId = req.params.id;
-  const data = await PigeonService.getSiblings(pigeonId);
+  const siblings = await PigeonService.getSiblings(pigeonId);
 
   sendResponse(res, {
     statusCode: 200,
     success: true,
     message: "Siblings fetched successfully",
-    data,
+    data: { siblings },
   });
 });
+
 
 // Import pigeons from Excel file
 const importPigeons = catchAsync(async (req, res) => {
@@ -190,6 +203,17 @@ const searchPigeonsByName = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const togglePigeonStatus = catchAsync(async (req: Request, res: Response) => {
+  const result = await PigeonService.togglePigeonStatusInDB(req.params.id);
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: `Pigeon status changed to ${result.status}`,
+    data: result,
+  });
+});
+
 
 export const PigeonController = {
   createPigeon,
@@ -204,4 +228,6 @@ export const PigeonController = {
   getMyPigeons,
   searchPigeonsByName,
   getMyAllPigeons,
+  togglePigeonStatus
+ 
 };

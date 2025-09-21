@@ -71,10 +71,29 @@ const adminReadNotification = catchAsync( async (req: Request, res: Response) =>
     });
 });
 
+
+const unreadNotificationCount = catchAsync(async (req: Request, res: Response) => {
+    const user = req.user;
+    if (!user) {
+        throw new ApiError(StatusCodes.UNAUTHORIZED, 'User not found');
+    }
+
+    const unreadCount = await NotificationService.getUnreadCount(user);
+
+    sendResponse(res, {
+        statusCode: StatusCodes.OK,
+        success: true,
+        message: 'Unread Notification Count Retrieved Successfully',
+        data: { unreadCount }
+    });
+});
+
+
 export const NotificationController = {
     adminNotificationFromDB,
     getNotificationFromDB,
     readNotification,
     adminReadNotification,
-    recentNotification
+    recentNotification,
+    unreadNotificationCount
 };

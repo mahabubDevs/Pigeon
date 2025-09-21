@@ -35,11 +35,12 @@ export const validateFormData = (schema: ZodSchema) => {
       if (!parsedData.photos) parsedData.photos = [];
 
       //  Numeric conversion
-      ["birthYear", "racingRating", "racherRating", "breederRating"].forEach(field => {
-        if (parsedData[field] !== undefined && parsedData[field] !== "") {
-          parsedData[field] = Number(parsedData[field]);
-        }
-      });
+      ["birthYear", "racingRating", "breederRating"].forEach(field => {
+  if (parsedData[field] !== undefined && parsedData[field] !== "") {
+    parsedData[field] = Number(parsedData[field]);
+  }
+});
+
 
       //  Zod validation
       const parsed = schema.safeParse(parsedData);

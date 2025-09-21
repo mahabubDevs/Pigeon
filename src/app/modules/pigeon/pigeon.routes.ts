@@ -60,8 +60,12 @@ router
   .route('/my-pigeons/:id')
   .get( PigeonController.getMyPigeons);
 
-
-
+router
+  .route("/toggle/:id")
+  .patch(
+    auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN), // only admin can toggle
+    PigeonController.togglePigeonStatus
+  );
 
 
 export const PigeonRoutes = router;

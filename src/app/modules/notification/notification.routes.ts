@@ -25,4 +25,12 @@ router.patch('/admin',
     NotificationController.adminReadNotification
 );
 
+
+router.get(
+    '/unreadCount',
+    auth(USER_ROLES.ADMIN),
+    NotificationController.unreadNotificationCount
+);
+
+
 export const NotificationRoutes = router;
