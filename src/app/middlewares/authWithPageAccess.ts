@@ -13,6 +13,7 @@ interface IJwtPayload {
   email: string;
   iat?: number;
   exp?: number;
+  pages?: string[];
 }
 
 export const authWithPageAccess = (page: string) => {
@@ -45,7 +46,8 @@ export const authWithPageAccess = (page: string) => {
       // 4. Page access check
       const user = await User.findById(decoded.id).select('pages');
       if (user?.pages?.includes(page)) {
-        req.user.pages = user.pages;
+        (req.user as any).pages = user.pages;
+
         return next();
       }
 

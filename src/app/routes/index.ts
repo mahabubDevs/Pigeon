@@ -14,11 +14,13 @@ import { AnalyticRoutes } from '../modules/analytics/analytic.route';
 import { UserSubscriptionRoutes } from '../modules/userEmailSubscripton/userEmailSubscripton.routes';
 import { RuleRoute } from '../modules/rule/rule.route';
 import { ContactRoute } from '../modules/contactUs/contact.routes';
+import { AdminRoutes } from '../modules/admin/admin.route';
 
 const router = express.Router();
 
 const apiRoutes = [
     { path: "/user", route: UserRoutes },
+    { path: "/admin", route: AdminRoutes },
     { path: "/auth", route: AuthRoutes },
     { path: "/rule", route: RuleRoute },
     { path: "/contact", route: ContactRoute },
