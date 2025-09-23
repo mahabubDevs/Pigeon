@@ -2,22 +2,21 @@ import express, { Request, Response } from "express";
 import cors from "cors";
 import { StatusCodes } from "http-status-codes";
 import { Morgan } from "./shared/morgan";
-import router from "../src/app/routes";
+import router from "./app/routes"; // ✅ changed from '../src/app/routes'
 import globalErrorHandler from "./app/middlewares/globalErrorHandler";
 import session from "express-session";
 
-import passport from "./config/passport"; // Adjust the path as necessary
-// import passportConfig from "./config/passport"; // Adjust the path as necessary
+import passport from "./config/passport"; // path already correct
 
-//  SubscriptionRoutes import 
+// Subscription route
 import handleStripeWebhook from "./helpers/handleStripeWebhook";
 
 const app = express();
 
 // ⚡️ Stripe webhook route must be before json parser
 app.post(
-  '/api/v1/subscription/webhook',
-  express.raw({ type: 'application/json' }), // raw body
+  "/api/v1/subscription/webhook",
+  express.raw({ type: "application/json" }), // raw body
   handleStripeWebhook
 );
 
@@ -26,14 +25,6 @@ app.use(Morgan.successHandler);
 app.use(Morgan.errorHandler);
 
 // body parser
-
-// const corsOptions = {
-//   origin: "https://mijanur3000.binarybards.online", // শুধু এই domain allow
-//   methods: ["GET", "POST", "PUT", "DELETE"],       // optional, allowed methods
-//   credentials: true                               // optional, যদি cookies/token পাঠাতে চাও
-// };
-
-
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -47,15 +38,15 @@ app.use(
     secret: "your_secret_key",
     resave: false,
     saveUninitialized: true,
-    cookie: { secure: false }, // production a HTTPS should be true
+    cookie: { secure: false }, // production: true
   })
 );
 
-//  Passport initialize
+// Passport initialize
 app.use(passport.initialize());
 app.use(passport.session());
 
-// 🔹 Worker PID logging middleware
+// Worker PID logging
 app.use((req: Request, res: Response, next) => {
   const start = Date.now();
   res.on("finish", () => {
@@ -70,13 +61,13 @@ app.use((req: Request, res: Response, next) => {
 app.use("/api/v1", router);
 
 app.get("/", (req: Request, res: Response) => {
-  res.send("Hey Backend, How can I assist you ");
+  res.send("Hey Backend, How can I assist you");
 });
 
-// global error handle
+// global error handler
 app.use(globalErrorHandler);
 
-// handle not found route
+// handle not found
 app.use((req: Request, res: Response) => {
   res.status(StatusCodes.NOT_FOUND).json({
     success: false,
