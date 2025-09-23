@@ -5,7 +5,7 @@ import { NotificationController } from './notification.controller';
 const router = express.Router();
 
 router.get('/',
-    auth(USER_ROLES.USER),
+    auth(USER_ROLES.USER, USER_ROLES.PAIDUSER),
     NotificationController.getNotificationFromDB
 );
 router.get('/admin',
@@ -17,7 +17,7 @@ router.get('/recentNotification',
     NotificationController.recentNotification
 );
 router.patch('/',
-    auth(USER_ROLES.USER),
+    auth(USER_ROLES.USER, USER_ROLES.PAIDUSER),
     NotificationController.readNotification
 );
 router.patch('/admin',

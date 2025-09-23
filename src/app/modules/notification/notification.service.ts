@@ -19,24 +19,46 @@ const createNotificationToDB = async (payload: INotification): Promise<INotifica
 };
 
 // get notifications
-const getNotificationFromDB = async ( user: JwtPayload ): Promise<INotification> => {
+const getNotificationFromDB = async (
+  user: JwtPayload,
+  query: getAllNotification = {}
+): Promise<{
+  notifications: INotification[];
+  pagination: {
+    total: number;
+    limit: number;
+    page: number;
+    totalPage: number;
+  };
+  unreadCount: number;
+}> => {
+  // 1️⃣ Initialize QueryBuilder with user-specific notifications
+  const builder = new QueryBuilder<INotification>(
+    Notification.find({ receiver: user.id }).populate({
+      path: 'receiver',
+      select: 'name profile',
+    }),
+    query
+  )
+    .search(['text']) // চাইলে searchable field add করো
+    .filter()
+    .sort()
+    .paginate()
+    .fields();
 
-    const result = await Notification.find({ receiver: user.id }).populate({
-        path: 'sender',
-        select: 'name profile',
-    });
+  // 2️⃣ Execute paginated query
+  const notifications = await builder.modelQuery.exec();
 
-    const unreadCount = await Notification.countDocuments({
-        receiver: user.id,
-        read: false,
-    });
+  // 3️⃣ Get pagination info
+  const pagination = await builder.getPaginationInfo();
 
-    const data: any = {
-        result,
-        unreadCount
-    };
+  // 4️⃣ Unread count
+  const unreadCount = await Notification.countDocuments({
+    receiver: user.id,
+    read: false,
+  });
 
-  return data;
+  return { pagination,notifications, unreadCount };
 };
 
 // read notifications only for user

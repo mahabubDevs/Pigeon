@@ -12,7 +12,7 @@ const getNotificationFromDB = catchAsync( async (req: Request, res: Response) =>
         throw new ApiError(StatusCodes.UNAUTHORIZED, 'User not found');
     }
 
-    const result = await NotificationService.getNotificationFromDB(user);
+    const result = await NotificationService.getNotificationFromDB(user, req.query);
 
     sendResponse(res, {
         statusCode: StatusCodes.OK,
