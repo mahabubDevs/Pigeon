@@ -95,7 +95,7 @@ const getPigeonWithFamily = catchAsync(async (req, res) => {
 
   // const role = req.user?.role?.toLowerCase() || 'user';
   const role = (req.user as IUser).role.toLowerCase();
-  const maxDepth = role === "PAIDUSER" ? 5 : 3;
+  const maxDepth = role === "PAIDUSER" ? 5 : 4;
 
   const pigeon = await PigeonService.getPigeonWithFamily(pigeonId, maxDepth);
 

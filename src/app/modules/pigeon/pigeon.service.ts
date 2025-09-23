@@ -12,6 +12,7 @@ import { userEmailSubscripton } from "../userEmailSubscripton/userEmailSubscript
 import { emailHelper } from "../../../helpers/emailHelper";
 import { JwtPayload } from "jsonwebtoken";
 import { USER_ROLES } from "../../../enums/user";
+import { User } from "../user/user.model";
 
 // Create Pigeon in DB
 
@@ -87,13 +88,17 @@ const createPigeonToDB = async (data: any, files: any, user: any) => {
   const result = await Pigeon.create(payload);
   if (!result) throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to create pigeon");
 
-  // Notification
-  await NotificationService.createNotificationToDB({
-    text: `New pigeon added by ${user.name}`,
-    type: "ADMIN",
-    referenceId: result._id.toString(),
-    read: false,
-  });
+ // Fetch sender from DB
+const sender = await User.findById(user._id).select("name");
+console.log(sender ,"sender ");
+
+// Notification
+await NotificationService.createNotificationToDB({
+  text: `New pigeon added by ${sender?.name || "Unknown User"}`, // ✅ use sender.name
+  type: "ADMIN",
+  referenceId: result._id.toString(),
+  read: false,
+});
 
   return result;
 };
@@ -156,21 +161,31 @@ const updatePigeonToDB = async (
   }
 
  // --- Handle photos ---
-  let currentPhotos: string[] = [];
+let currentPhotos: string[] = pigeon.photos || []; // DB-তে পুরানো ছবি
+let newPhotos: string[] = [];
+let remainingPhotos: string[] = parsedData.remaining || [];
 
-  if (files && Object.keys(files).length > 0) {
-    // নতুন ছবি থাকলে → শুধু unique image save করবো
-    const filesArray: Express.Multer.File[] = Object.values(files).flat() as Express.Multer.File[];
-    const newPhotos = filesArray.map(file => `/images/${file.filename}`);
+// যদি নতুন ফাইল থাকে
+if (files && Object.keys(files).length > 0) {
+  const filesArray: Express.Multer.File[] = Object.values(files).flat() as Express.Multer.File[];
+  newPhotos = filesArray.map(file => `/images/${file.filename}`);
+}
 
-    // remove duplicates using Set
-    currentPhotos = Array.from(new Set(newPhotos));
-  } else {
-    // কোনো ছবি না দিলে → photos ফাঁকা হবে
-    currentPhotos = [];
-  }
+// আগেরগুলো থেকে শুধুমাত্র remaining গুলো রেখে দিচ্ছি
+let updatedPhotos = currentPhotos.filter(photo => remainingPhotos.includes(photo));
 
-  parsedData.photos = currentPhotos;
+// নতুন ছবি যোগ করছি
+updatedPhotos.push(...newPhotos);
+
+// Duplicate remove
+updatedPhotos = Array.from(new Set(updatedPhotos));
+
+// At least one image থাকতে হবে
+if (updatedPhotos.length === 0) {
+  throw new ApiError(StatusCodes.BAD_REQUEST, "At least one image is required");
+}
+
+parsedData.photos = updatedPhotos;
 
 
   // Merge payload with existing pigeon data
@@ -373,27 +388,31 @@ const deletePigeonFromDB = async (id: string): Promise<IPigeon | null> => {
 // Get Pigeon with family members (parents) up to a certain depth
 const getPigeonWithFamily = async (pigeonId: string, maxDepth = 5) => {
   const populateFamily = async (pigeon: any, depth = 0): Promise<any> => {
-    if (!pigeon || depth >= maxDepth) return pigeon;
+    if (!pigeon) return pigeon;
 
+    // Always populate current pigeon
     const populatedPigeonRaw = await Pigeon.findById(pigeon._id)
-      .populate(["fatherRingId", "motherRingId"])
+      .populate(["fatherRingId", "motherRingId", "breeder"])
       .lean();
 
     if (!populatedPigeonRaw) return null;
 
     const populatedPigeon = populatedPigeonRaw;
 
-    if (populatedPigeon.fatherRingId) {
-      populatedPigeon.fatherRingId = await populateFamily(
-        populatedPigeon.fatherRingId,
-        depth + 1
-      );
-    }
-    if (populatedPigeon.motherRingId) {
-      populatedPigeon.motherRingId = await populateFamily(
-        populatedPigeon.motherRingId,
-        depth + 1
-      );
+    // Recurse only if depth < maxDepth
+    if (depth < maxDepth) {
+      if (populatedPigeon.fatherRingId) {
+        populatedPigeon.fatherRingId = await populateFamily(
+          populatedPigeon.fatherRingId,
+          depth + 1
+        );
+      }
+      if (populatedPigeon.motherRingId) {
+        populatedPigeon.motherRingId = await populateFamily(
+          populatedPigeon.motherRingId,
+          depth + 1
+        );
+      }
     }
 
     return populatedPigeon;

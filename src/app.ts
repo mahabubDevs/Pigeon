@@ -26,6 +26,14 @@ app.use(Morgan.successHandler);
 app.use(Morgan.errorHandler);
 
 // body parser
+
+// const corsOptions = {
+//   origin: "https://mijanur3000.binarybards.online", // শুধু এই domain allow
+//   methods: ["GET", "POST", "PUT", "DELETE"],       // optional, allowed methods
+//   credentials: true                               // optional, যদি cookies/token পাঠাতে চাও
+// };
+
+
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

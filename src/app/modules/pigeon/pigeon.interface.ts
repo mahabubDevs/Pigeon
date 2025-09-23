@@ -33,4 +33,5 @@ export interface IPigeon {
   iconicScore?: number; // iconic pigeon score
   createdAt?: Date;
   updatedAt?: Date;
+  remaining?:string[];
 }

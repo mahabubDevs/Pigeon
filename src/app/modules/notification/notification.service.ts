@@ -50,26 +50,40 @@ const readNotificationToDB = async ( user: JwtPayload): Promise<INotification | 
 };
 
 // get notifications for admin
-const adminNotificationFromDB = async (query:getAllNotification = {}): Promise<{
-    notification: INotification[];
-    pagination: {
-        total: number;
-        limit: number;
-        page: number;
-        totalPage: number;
-    }
+const adminNotificationFromDB = async (
+  query: getAllNotification = {}
+): Promise<{
+  notification: INotification[];
+  pagination: {
+    total: number;
+    limit: number;
+    page: number;
+    totalPage: number;
+  };
 }> => {
+  
+  // 1️⃣ Initialize QueryBuilder with ADMIN notifications
+  const builder = new QueryBuilder<INotification>(
+    Notification.find({ type: 'ADMIN' }),
+    query
+  )
+    .search(['text'])  // searchable fields, adjust as needed
+    .filter()          // apply extra filters from query
+    .sort()            // sort by createdAt or query.sort
+    .paginate()        // page & limit from query
+    .fields();         // select specific fields if query.fields exists
 
-    const builder = new QueryBuilder<INotification>(Notification.find(),query)
-    .search([])
-    .paginate()
-    .fields();
+  // 2️⃣ Execute query
+  const notification = await builder.modelQuery.exec();
 
-    const notification = await builder.modelQuery;
-    const pagination = await builder.getPaginationInfo();
-    const result = await Notification.find({ type: 'ADMIN' });
-    return {pagination, notification}
+  // 3️⃣ Get pagination info
+  const pagination = await builder.getPaginationInfo();
+
+  // 4️⃣ Return structured response
+  return { pagination, notification };
 };
+
+
 const recentNotification = async (query:getAllNotification = {}): Promise<{
     notification: INotification[];
     pagination: {

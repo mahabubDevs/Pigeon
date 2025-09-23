@@ -101,6 +101,11 @@ const pigeonSchema: Schema<IPigeon> = new Schema(
       type: Number,
       default: 0,
     },
+    remaining:[
+      {
+        type:String,
+      },
+    ]
 },
   {
     timestamps: true,
