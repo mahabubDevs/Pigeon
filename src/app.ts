@@ -10,6 +10,7 @@ import passport from "./config/passport"; // path already correct
 
 // Subscription route
 import handleStripeWebhook from "./helpers/handleStripeWebhook";
+import { credential } from "firebase-admin";
 
 const app = express();
 
@@ -25,7 +26,11 @@ app.use(Morgan.successHandler);
 app.use(Morgan.errorHandler);
 
 // body parser
-app.use(cors());
+app.use(cors({
+  origin:'*',
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  credentials: true, // যদি cookies/session ব্যবহার করো
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

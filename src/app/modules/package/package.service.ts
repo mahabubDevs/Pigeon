@@ -8,6 +8,7 @@ import stripe from "../../../config/stripe";
 import Stripe from "stripe";
 
 const createPackageToDB = async (payload: IPackage): Promise<IPackage | null> => {
+  console.log("console-1");
     // Step 0: Check if package already exists for this admin and title
     const existingPackage = await Package.findOne({
         title: payload.title,
@@ -29,6 +30,7 @@ const createPackageToDB = async (payload: IPackage): Promise<IPackage | null> =>
 
     // Step 1: Create product in Stripe
     const product = await createSubscriptionProduct(productPayload);
+    console.log("product",product);
 
     if (!product) {
         throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to create subscription product");
@@ -36,11 +38,14 @@ const createPackageToDB = async (payload: IPackage): Promise<IPackage | null> =>
 
     // Step 2: Check again if Stripe price already exists for this product
     const existingPrices = await stripe.prices.list({ product: product.productId });
+    console.log("existingPrices",existingPrices);
     let price: Stripe.Price;
     if (existingPrices.data.length > 0) {
+      console.log('if')
         price = existingPrices.data[0]; // if exists, use the first one
         console.log("Using existing Stripe price:", price.id);
     } else {
+      console.log('if')
         price = await stripe.prices.create({
             unit_amount: payload.price * 100,
             currency: "usd",
@@ -56,6 +61,7 @@ const createPackageToDB = async (payload: IPackage): Promise<IPackage | null> =>
     payload.productId = product.productId;
     payload.priceId = price.id;
 
+    console.log('last')
     // Step 4: Save package in DB
     const result = await Package.create(payload);
 
