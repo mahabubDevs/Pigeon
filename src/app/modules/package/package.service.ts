@@ -179,17 +179,3 @@ export const PackageService = {
     getPackageDetailsFromDB,
     deletePackageToDB
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-

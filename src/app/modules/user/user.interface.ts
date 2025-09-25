@@ -32,6 +32,8 @@ export type IUser = {
     stripeAccountId?: string;
     pages?: string[];
     customeRole?: string;
+    createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export type UserModal = {

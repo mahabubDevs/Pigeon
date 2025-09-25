@@ -6,7 +6,7 @@ const breederSchema = new Schema({
   loftName: { type: String, required: true },
   breederName: { type: String, required: true },
   country: { type: String },
-  email: { type: String, required: true, unique: true },
+  email: { type: String, required: false },
   phone: { type: String },
   status: { type: Boolean, default: false },
   experience: { type: String, default: "none" },

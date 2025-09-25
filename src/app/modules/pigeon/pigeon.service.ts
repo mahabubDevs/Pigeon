@@ -93,12 +93,39 @@ const sender = await User.findById(user._id).select("name");
 console.log(sender ,"sender ");
 
 // Notification
-await NotificationService.createNotificationToDB({
-  text: `New pigeon added by ${sender?.name || "Unknown User"}`, // ✅ use sender.name
-  type: "ADMIN",
-  referenceId: result._id.toString(),
-  read: false,
-});
+// await NotificationService.createNotificationToDB({
+//   text: `New pigeon added by ${sender?.name || "Unknown User"}`, // ✅ use sender.name
+//   type: "ADMIN",
+//   referenceId: result._id.toString(),
+//   read: false,
+// });
+
+if (user.role === "USER") {
+  // সাধারণ USER অ্যাড করলে শুধু Admin পাবে
+  const admins = await User.find({ role: "ADMIN" }).select("_id name");
+  for (const admin of admins) {
+    await NotificationService.createNotificationToDB({
+      text: `New pigeon added by ${sender?.name || "Unknown User"}`,
+      type: "ADMIN",
+      receiver: admin._id, // শুধু Admin
+      referenceId: result._id.toString(),
+      read: false,
+    });
+  }
+} else if (user.role === "ADMIN") {
+  // Admin অ্যাড করলে সব USER এবং PAIDUSER পাবে
+  const users = await User.find({ role: { $in: ["USER", "PAIDUSER"] } }).select("_id name");
+  for (const u of users) {
+    await NotificationService.createNotificationToDB({
+      text: `New pigeon added by ${sender?.name || "Admin"}`,
+      type: u.role as "USER" | "PAIDUSER", // Type অনুযায়ী assign
+      receiver: u._id,
+      referenceId: result._id.toString(),
+      read: false,
+    });
+  }
+}
+
 
   return result;
 };
@@ -202,12 +229,33 @@ parsedData.photos = updatedPhotos;
   if (!updatedPigeon) throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to update pigeon");
 
   // Notification
-  await NotificationService.createNotificationToDB({
-    text: `Pigeon updated by ${user.name}`,
-    type: "ADMIN",
-    referenceId: pigeon._id.toString(),
-    read: false,
-  });
+const sender = await User.findById(user._id).select("name");
+if (user.role === "USER") {
+  // সাধারণ USER update করলে শুধু Admin পাবে
+  const admins = await User.find({ role: "ADMIN" }).select("_id name");
+  for (const admin of admins) {
+    await NotificationService.createNotificationToDB({
+      text: `Pigeon updated by ${sender?.name || "Unknown User"}`,
+      type: "ADMIN",
+      receiver: admin._id,
+      referenceId: pigeon._id.toString(),
+      read: false,
+    });
+  }
+} else if (user.role === "ADMIN") {
+  // Admin update করলে সব USER এবং PAIDUSER পাবে
+  const users = await User.find({ role: { $in: ["USER", "PAIDUSER"] } }).select("_id name role");
+  for (const u of users) {
+    await NotificationService.createNotificationToDB({
+      text: `Pigeon updated by ${sender?.name || "Admin"}`,
+      type: u.role as "USER" | "PAIDUSER",
+      receiver: u._id,
+      referenceId: pigeon._id.toString(),
+      read: false,
+    });
+  }
+}
+
 
   return updatedPigeon;
 };

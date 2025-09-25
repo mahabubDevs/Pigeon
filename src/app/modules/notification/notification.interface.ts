@@ -6,7 +6,8 @@ export type INotification = {
     read: boolean;
     referenceId?: string;
     screen?: "RESERVATION" | "CHAT";
-    type?: "ADMIN";
+    type?: "ADMIN" | "USER" | "PAIDUSER";
+    
 };
 
 export type NotificationModel = Model<INotification>;

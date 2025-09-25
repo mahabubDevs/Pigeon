@@ -73,7 +73,7 @@ const fileUploadHandler = () => {
   };
 
   const upload = multer({ storage, fileFilter: filterFilter }).fields([
-    { name: 'image', maxCount: 3 },
+    { name: 'image', maxCount: 5 },
     { name: 'excel', maxCount: 1 },
   ]);
   return upload;

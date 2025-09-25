@@ -2,6 +2,9 @@ import { JwtPayload } from 'jsonwebtoken';
 import { INotification } from './notification.interface';
 import { Notification } from './notification.model';
 import QueryBuilder from '../../../util/queryBuilder';
+import { User } from '../user/user.model';
+import ApiError from '../../../errors/ApiErrors';
+import { StatusCodes } from 'http-status-codes';
 
 
 interface getAllNotification {
@@ -22,43 +25,39 @@ const createNotificationToDB = async (payload: INotification): Promise<INotifica
 const getNotificationFromDB = async (
   user: JwtPayload,
   query: getAllNotification = {}
-): Promise<{
-  notifications: INotification[];
-  pagination: {
-    total: number;
-    limit: number;
-    page: number;
-    totalPage: number;
-  };
-  unreadCount: number;
-}> => {
-  // 1️⃣ Initialize QueryBuilder with user-specific notifications
+) => {
+  // DB থেকে user আনো
+  const dbUser = await User.findById(user._id).select("createdAt");
+  if (!dbUser) {
+    throw new ApiError(StatusCodes.NOT_FOUND, "User not found");
+  }
+
   const builder = new QueryBuilder<INotification>(
-    Notification.find({ receiver: user.id }).populate({
-      path: 'receiver',
-      select: 'name profile',
+    Notification.find({
+      receiver: user.id,
+      createdAt: { $gte: dbUser.createdAt }, // user register করার পর থেকে notification
+    }).populate({
+      path: "receiver",
+      select: "name profile",
     }),
     query
   )
-    .search(['text']) // চাইলে searchable field add করো
+    .search(["text"])
     .filter()
     .sort()
     .paginate()
     .fields();
 
-  // 2️⃣ Execute paginated query
   const notifications = await builder.modelQuery.exec();
-
-  // 3️⃣ Get pagination info
   const pagination = await builder.getPaginationInfo();
 
-  // 4️⃣ Unread count
   const unreadCount = await Notification.countDocuments({
     receiver: user.id,
+    createdAt: { $gte: dbUser.createdAt },
     read: false,
   });
 
-  return { pagination,notifications, unreadCount };
+  return { pagination, notifications, unreadCount };
 };
 
 // read notifications only for user

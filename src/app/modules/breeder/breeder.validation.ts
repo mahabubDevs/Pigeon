@@ -13,14 +13,16 @@ const createBreederZodSchema = z.object({
     
   country: z
     .string({ required_error: "Country is required" })
-    .min(2, "Country must be at least 2 characters"),
+    .min(2, "Country must be at least 2 characters")
+    .optional()
+    ,
     
   email: z
     .string({ required_error: "Email is required" })
-    .email("Invalid email address"),
+    .email("Invalid email address").optional(),
     
   phone: z
-    .string({ required_error: "Phone number is required" }),
+    .string({ required_error: "Phone number is required" }).optional(),
 
     experience: z.string().optional(),
     score: z.number().optional(),
