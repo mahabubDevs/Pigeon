@@ -28,7 +28,7 @@ router.patch('/admin',
 
 router.get(
     '/unreadCount',
-    auth(USER_ROLES.ADMIN),
+    auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN),
     NotificationController.unreadNotificationCount
 );
 

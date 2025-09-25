@@ -19,34 +19,36 @@ const fileUploadHandler = () => {
     }
   };
 
-  const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-      let uploadDir;
-      switch (file.fieldname) {
-        case 'image':
-          uploadDir = path.join(baseUploadDir, 'images');
-          break;
-        case 'excel':
-          uploadDir = path.join(baseUploadDir, 'excels');
-          break;
-        default:
-          throw new ApiError(StatusCodes.BAD_REQUEST, 'File is not supported');
-      }
-      createDir(uploadDir);
-      cb(null, uploadDir);
-    },
-    filename: (req, file, cb) => {
-      const fileExt = path.extname(file.originalname);
-      const fileName =
-        file.originalname.replace(fileExt, '').toLowerCase().split(' ').join('-') +
-        '-' +
-        Date.now();
-      cb(null, fileName + fileExt);
-    },
-  });
+const storage = multer.diskStorage({
+  destination: (req, file, cb: (error: Error | null, destination: string) => void) => {
+    let uploadDir: string;
+    const imageFields = ['pigeonPhoto', 'eyePhoto', 'ownershipPhoto', 'pedigreePhoto', 'DNAPhoto'];
 
-  const filterFilter = (req: Request, file: any, cb: FileFilterCallback) => {
-    if (file.fieldname === 'image') {
+    if (imageFields.includes(file.fieldname)) {
+      uploadDir = path.join(baseUploadDir, 'images');
+    } else if (file.fieldname === 'excel') {
+      uploadDir = path.join(baseUploadDir, 'excels');
+    } else {
+      return cb(new Error('File field is not supported'), ''); // এখানে destination দিতে হবে
+    }
+
+    createDir(uploadDir);
+    cb(null, uploadDir); // normal case
+  },
+  filename: (req, file, cb) => {
+    const fileExt = path.extname(file.originalname);
+    const fileName =
+      file.originalname.replace(fileExt, '').toLowerCase().split(' ').join('-') +
+      '-' +
+      Date.now();
+    cb(null, fileName + fileExt);
+  },
+});
+
+  const fileFilter = (req: Request, file: any, cb: FileFilterCallback) => {
+    const imageFields = ['pigeonPhoto', 'eyePhoto', 'ownershipPhoto', 'pedigreePhoto', 'DNAPhoto'];
+
+    if (imageFields.includes(file.fieldname)) {
       if (
         file.mimetype === 'image/jpeg' ||
         file.mimetype === 'image/png' ||
@@ -68,14 +70,19 @@ const fileUploadHandler = () => {
         cb(new ApiError(StatusCodes.BAD_REQUEST, 'Only .xlsx or .csv supported'));
       }
     } else {
-      cb(new ApiError(StatusCodes.BAD_REQUEST, 'This file is not supported'));
+      cb(new ApiError(StatusCodes.BAD_REQUEST, 'This file field is not supported'));
     }
   };
 
-  const upload = multer({ storage, fileFilter: filterFilter }).fields([
-    { name: 'image', maxCount: 5 },
+  const upload = multer({ storage, fileFilter }).fields([
+    { name: 'pigeonPhoto', maxCount: 1 },
+    { name: 'eyePhoto', maxCount: 1 },
+    { name: 'ownershipPhoto', maxCount: 1 },
+    { name: 'pedigreePhoto', maxCount: 1 },
+    { name: 'DNAPhoto', maxCount: 1 },
     { name: 'excel', maxCount: 1 },
   ]);
+
   return upload;
 };
 

@@ -44,7 +44,13 @@ export const createPigeonZodSchema = z.object({
   iconic: z.boolean().optional(),   // Admin can set
   iconicScore: z.number().optional(), // Admin can set
   notes: z.string().optional(),
-  photos: z.array(z.string()).min(1, "At least one photo is required"),
+  // photos: z.array(z.string()).min(1, "At least one photo is required"),
+  photos: z.array(z.string()).optional(),
+  pigeonPhoto: z.string().optional(),
+  eyePhoto: z.string().optional(),
+  ownershipPhoto: z.string().optional(),
+  pedigreePhoto: z.string().optional(),
+  DNAPhoto: z.string().optional(),
   results: z
     .preprocess((val) => {
       if (!val) return undefined; // results না দিলে optional

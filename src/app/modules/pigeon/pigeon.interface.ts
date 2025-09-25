@@ -19,6 +19,11 @@ export interface IPigeon {
   racherRating?: string;
   notes?: string;
   photos?: string[]; // multiple photo url
+  pigeonPhoto? : string;
+  eyePhoto? : string;
+  ownershipPhoto? : string;
+  pedigreePhoto? : string;
+  DNAPhoto? : string;
   results?: {
     name: string;
     date: Date;

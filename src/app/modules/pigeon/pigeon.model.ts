@@ -66,6 +66,21 @@ const pigeonSchema: Schema<IPigeon> = new Schema(
         type: String, // photo URL store 
       },
     ],
+    pigeonPhoto: {
+      type: String,
+    },
+    eyePhoto:{
+      type: String,
+    },
+    ownershipPhoto:{
+      type: String,
+    },
+    pedigreePhoto: {
+      string: String,
+    },
+    DNAPhoto: {
+      type: String,
+    },
     results: [
       {
         name: { type: String,  },
