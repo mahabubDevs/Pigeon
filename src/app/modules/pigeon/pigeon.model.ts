@@ -76,7 +76,7 @@ const pigeonSchema: Schema<IPigeon> = new Schema(
       type: String,
     },
     pedigreePhoto: {
-      string: String,
+      type: String,
     },
     DNAPhoto: {
       type: String,
