@@ -19,11 +19,11 @@ const pigeonSchema: Schema<IPigeon> = new Schema(
     },
     country: {
       type: String,
-      required: true,   
+      required: false,   
      },
     birthYear: {
       type: Number,
-      required: true,
+      required: false,
     },
     shortInfo: {
       type: String,
