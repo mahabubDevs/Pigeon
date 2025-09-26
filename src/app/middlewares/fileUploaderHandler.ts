@@ -22,7 +22,7 @@ const fileUploadHandler = () => {
 const storage = multer.diskStorage({
   destination: (req, file, cb: (error: Error | null, destination: string) => void) => {
     let uploadDir: string;
-    const imageFields = ['pigeonPhoto', 'eyePhoto', 'ownershipPhoto', 'pedigreePhoto', 'DNAPhoto'];
+    const imageFields = ['pigeonPhoto', 'eyePhoto', 'ownershipPhoto', 'pedigreePhoto', 'DNAPhoto','image'];
 
     if (imageFields.includes(file.fieldname)) {
       uploadDir = path.join(baseUploadDir, 'images');
@@ -46,7 +46,7 @@ const storage = multer.diskStorage({
 });
 
   const fileFilter = (req: Request, file: any, cb: FileFilterCallback) => {
-    const imageFields = ['pigeonPhoto', 'eyePhoto', 'ownershipPhoto', 'pedigreePhoto', 'DNAPhoto'];
+    const imageFields = ['pigeonPhoto', 'eyePhoto', 'ownershipPhoto', 'pedigreePhoto', 'DNAPhoto','image'];
 
     if (imageFields.includes(file.fieldname)) {
       if (
@@ -80,6 +80,7 @@ const storage = multer.diskStorage({
     { name: 'ownershipPhoto', maxCount: 1 },
     { name: 'pedigreePhoto', maxCount: 1 },
     { name: 'DNAPhoto', maxCount: 1 },
+    { name: 'image', maxCount: 1 },
     { name: 'excel', maxCount: 1 },
   ]);
 
