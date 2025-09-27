@@ -3,8 +3,9 @@ import { userEmailSubscripton as userEmailSubscriptonSchema } from "./userEmailS
 import ApiError from "../../../errors/ApiErrors";
 import { ISubscription } from "./userEmailSubscripton.interface";
 import { emailHelper } from "../../../helpers/emailHelper";
-import { User } from "../user/user.model";
-// import User from "../../user/user.model"; // Admin user collection import
+
+// Load admin email from .env
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "";
 
 const createSubscriptionToDB = async (payload: ISubscription): Promise<ISubscription> => {
   // 1️⃣ Check if already subscribed
@@ -22,20 +23,22 @@ const createSubscriptionToDB = async (payload: ISubscription): Promise<ISubscrip
   // 2️⃣ Create new subscription
   const sub = await userEmailSubscriptonSchema.create(payload);
 
-  // 3️⃣ Send email to admin
-  const admins = await User.find({ role: "ADMIN" }).select("email name");
+  // 3️⃣ Send email to admin (from .env)
+  if (ADMIN_EMAIL) {
+    const html = `<p>New subscription from user: <b>${payload.email}</b></p>`;
 
-  const html = `<p>New subscription from user: <b>${payload.email}</b></p>`;
-
-  for (const admin of admins) {
     await emailHelper.sendEmail({
-      to: admin.email,
+      to: ADMIN_EMAIL,
       subject: "New User Subscription",
       html,
     });
-    console.log(admin,"admin");
+
+    console.log("✅ Subscription email sent to admin:", ADMIN_EMAIL);
+  } else {
+    console.error("❌ ADMIN_EMAIL not set in .env file!");
   }
-console.log("test-2");
+
+  console.log("test-2");
   return sub;
 };
 

@@ -2,19 +2,19 @@ import { z } from "zod";
 
 // Race result object schema
 const raceResultSchema = z.object({
-  name: z.string({ required_error: "Race name is required" }),
+  name: z.string({ required_error: "Race name is required" }).optional(),
   date: z.preprocess(
     val => (val ? new Date(val as string) : undefined),
     z.date({ required_error: "Race date is required" })
-  ),
-  distance: z.string({ required_error: "Distance is required" }),
-  total: z.number({ required_error: "Total is required" }).int(),
-  place: z.string({ required_error: "Place is required" }),
+  ).optional(),
+  distance: z.string({ required_error: "Distance is required" }).optional(),
+  total: z.number({ required_error: "Total is required" }).int().optional(),
+  place: z.string({ required_error: "Place is required" }).optional(),
 });
 
 export const createPigeonZodSchema = z.object({
   ringNumber: z.string({ required_error: "Ring Number is required" }),
-  name: z.string({ required_error: "Name is required" }),
+  name: z.string({ required_error: "Name is required" }).optional(),
   country: z.string({ required_error: "Country is required" }).optional(),
   birthYear: z.preprocess(
     val => (val !== undefined && val !== "" ? Number(val) : undefined),
