@@ -160,7 +160,7 @@ const createPigeonToDB = async (data: any, files: any, user: any) => {
 
 
 
-   
+  
   // Father/Mother Ring
   if (parsedData.fatherRingId && parsedData.fatherRingId.trim() !== "") {
     const father = await Pigeon.findOne({ ringNumber: parsedData.fatherRingId });
@@ -208,23 +208,6 @@ const createPigeonToDB = async (data: any, files: any, user: any) => {
   } else if (!Array.isArray(parsedData.results)) {
     parsedData.results = [];
   }
-
-
-// যদি আগেই parsedData থেকে payload variable থাকে, তাহলে পুনরায় declare করো না
-const payloadData = { ...parsedData, user: user._id }; // নতুন নাম দিলে conflict হবেনা
-
-let savedPigeon; // আগের result এর জায়গায় নতুন নাম
-try {
-  savedPigeon = await Pigeon.create(payloadData);
-} catch (err: any) {
-  if (err.code === 11000) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, "Duplicate ringNumber");
-  } else {
-    throw err;
-  }
-}
-
-
 
   // Save to DB
   const payload = { ...parsedData, user: user._id };
