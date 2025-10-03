@@ -1,0 +1,36 @@
+import express from 'express';
+import auth from '../../middlewares/auth';
+import { USER_ROLES } from '../../../enums/user';
+import { NotificationController } from './notification.controller';
+const router = express.Router();
+
+router.get('/',
+    auth(USER_ROLES.USER, USER_ROLES.PAIDUSER),
+    NotificationController.getNotificationFromDB
+);
+router.get('/admin',
+    auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN),
+    NotificationController.adminNotificationFromDB
+);
+router.get('/recentNotification',
+    auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN),
+    NotificationController.recentNotification
+);
+router.patch('/',
+    auth(USER_ROLES.USER, USER_ROLES.PAIDUSER),
+    NotificationController.readNotification
+);
+router.patch('/admin',
+    auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN),
+    NotificationController.adminReadNotification
+);
+
+
+router.get(
+    '/unreadCount',
+    auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN),
+    NotificationController.unreadNotificationCount
+);
+
+
+export const NotificationRoutes = router;

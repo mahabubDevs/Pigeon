@@ -1,0 +1,40 @@
+name: Deploy Backend to AlmaLinux Server
+
+on:
+  push:
+    branches:
+      - main   # main branch এ push হলেই deploy হবে
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Deploy to Server via SSH
+        uses: appleboy/ssh-action@v1.1.0
+        with:
+          host: 50.6.200.33
+          username: root
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: 22
+          script: |
+            cd /var/www/your-project-folder   # তোমার project path দাও
+            git pull origin main
+            npm install --production
+            npm run build
+            # পুরানো tmux session থাকলে kill করো
+            tmux kill-session -t backend-app || true
+            # নতুন tmux session এ start করো
+            tmux new -d -s backend-app "node dist/server.js"
+
+
+
+
+
+
+
+
+            

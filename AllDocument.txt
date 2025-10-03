@@ -1,0 +1,6 @@
+Page Access list : 
+    1. analytics
+    2. breeder
+    3. overview
+    4. package
+    5. userManagement
