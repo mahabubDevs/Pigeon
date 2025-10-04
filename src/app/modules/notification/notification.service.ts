@@ -70,7 +70,7 @@ const getNotificationFromDB = async (
 const readNotificationToDB = async ( user: JwtPayload): Promise<INotification | undefined> => {
 
     const result: any = await Notification.updateMany(
-        { receiver: user.id, read: false },
+        { receiver: user._id, read: false },
         { $set: { read: true } }
     );
     return result;
