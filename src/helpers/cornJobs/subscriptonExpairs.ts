@@ -9,7 +9,7 @@ import { User } from "../../app/modules/user/user.model";
  * Cron job to check expired subscriptions every day at midnight
  */
 export const subscriptionExpiryCron = () => {
-    cron.schedule("*/2 * * * *", async () => {
+    cron.schedule("0 0 * * * *", async () => {
         console.log("Running subscription expiry check...");
 
         const now = new Date();

@@ -62,7 +62,7 @@ export const createSubscriptionProduct = async ( payload: Partial<IPackage>): Pr
         after_completion: {
             type: 'redirect',
             redirect: {
-                url: 'http://50.6.200.33:3000/payment-success', // Redirect URL on successful payment
+                url: 'https://thepigeonhub.com/payment-success', // Redirect URL on successful payment
             },
         },
         metadata: {
