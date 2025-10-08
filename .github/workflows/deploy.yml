@@ -37,10 +37,10 @@ jobs:
             npm run build
 
             # Kill old tmux session if exists
-            tmux kill-session -t server || true
+            tmux kill-session -t oldserver || true
 
             # Start a new tmux session named 'server' and run backend
-            tmux new-session -d -s server "node dist/app.js"
+            tmux new-session -d -s oldserver "node dist/app.js"
 
             # Optional: list running tmux sessions
             tmux ls
