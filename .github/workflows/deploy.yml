@@ -42,3 +42,6 @@ jobs:
 
             pm2 delete nextjs-app || true
             pm2 start npm --name nextjs-app -- start --prefix frontend
+
+            # Save PM2 process list to synchronize
+            pm2 save
