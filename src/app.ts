@@ -66,7 +66,7 @@ app.use((req: Request, res: Response, next) => {
 app.use("/api/v1", router);
 
 app.get("/", (req: Request, res: Response) => {
-  res.send("Hey Backend, How can I assist you please tell me");
+  res.send("Hey Backend, How can I assist you please tell ");
 });
 
 // global error handler
