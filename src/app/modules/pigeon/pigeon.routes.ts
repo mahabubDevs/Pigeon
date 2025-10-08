@@ -23,6 +23,10 @@ router
     .get(PigeonController.getAllPigeons)
     .get(PigeonController.getAllPigeonsAdmin)
 router
+    .route("/getAllPigeonsAdmin")
+   
+    .get(PigeonController.getAllPigeonsAdmin)
+router
 .route("/export")
   .get(
     auth( USER_ROLES.PAIDUSER),
