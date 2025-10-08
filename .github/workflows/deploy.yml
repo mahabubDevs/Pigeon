@@ -36,11 +36,11 @@ jobs:
             npm install
             npm run build
 
-            # Restart PM2 processes individually
-            pm2 delete server || true
-            pm2 start dist/app.js --name server
+            # Kill old tmux session if exists
+            tmux kill-session -t server || true
 
-           
+            # Start a new tmux session named 'server' and run backend
+            tmux new-session -d -s server "node dist/app.js"
 
-            # Save PM2 process list to synchronize
-            pm2 save
+            # Optional: list running tmux sessions
+            tmux ls
