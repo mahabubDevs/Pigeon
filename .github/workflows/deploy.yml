@@ -1,46 +1,46 @@
-name: 🚀 Deploy to Server
+# name: 🚀 Deploy to Server
 
-on:
-  push:
-    branches:
-      - main
+# on:
+#   push:
+#     branches:
+#       - main
 
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
+# jobs:
+#   deploy:
+#     runs-on: ubuntu-latest
 
-    steps:
-      - name: 🛎️ Checkout code
-        uses: actions/checkout@v4
+#     steps:
+#       - name: 🛎️ Checkout code
+#         uses: actions/checkout@v4
 
-      - name: 🔐 Connect to Server & Deploy
-        uses: appleboy/ssh-action@v1.1.0
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SERVER_SSH_KEY }}
-          script: |
-            cd ${{ secrets.SSH_PATH }}
+#       - name: 🔐 Connect to Server & Deploy
+#         uses: appleboy/ssh-action@v1.1.0
+#         with:
+#           host: ${{ secrets.SSH_HOST }}
+#           username: ${{ secrets.SSH_USER }}
+#           key: ${{ secrets.SERVER_SSH_KEY }}
+#           script: |
+#             cd ${{ secrets.SSH_PATH }}
 
-            # Pull latest code
-            git reset --hard
-            git clean -fd
-            git pull origin main
+#             # Pull latest code
+#             git reset --hard
+#             git clean -fd
+#             git pull origin main
 
-            # Remove old build/cache folders
-            rm -rf dist/       # TypeScript build folder
-            rm -rf .next/      # Next.js build folder
-            rm -rf node_modules
+#             # Remove old build/cache folders
+#             rm -rf dist/       # TypeScript build folder
+#             rm -rf .next/      # Next.js build folder
+#             rm -rf node_modules
 
-            # Fresh install & build
-            npm install
-            npm run build
+#             # Fresh install & build
+#             npm install
+#             npm run build
 
-            # Kill old tmux session if exists
-            tmux kill-session -t oldserver || true
+#             # Kill old tmux session if exists
+#             tmux kill-session -t oldserver || true
 
-            # Start a new tmux session named 'server' and run backend
-            tmux new-session -d -s oldserver "node dist/app.js"
+#             # Start a new tmux session named 'server' and run backend
+#             tmux new-session -d -s oldserver "node dist/app.js"
 
-            # Optional: list running tmux sessions
-            tmux ls
+#             # Optional: list running tmux sessions
+#             tmux ls
