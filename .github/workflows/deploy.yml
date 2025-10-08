@@ -36,6 +36,9 @@ jobs:
             npm install
             npm run build
 
-            # Restart PM2 processes
-            pm2 delete all || true
-            pm2 start ecosystem.config.js
+            # Restart PM2 processes individually
+            pm2 delete server || true
+            pm2 start dist/app.js --name server
+
+            pm2 delete nextjs-app || true
+            pm2 start npm --name nextjs-app -- start --prefix frontend
