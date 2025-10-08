@@ -1,4 +1,31 @@
-name: 🚀 Deploy to Server
+# name: 🚀 Deploy to Server
+
+# on:
+#   push:
+#     branches:
+#       - main
+
+# jobs:
+#   deploy:
+#     runs-on: ubuntu-latest
+
+#     steps:
+#       - name: 🛎️ Checkout code
+#         uses: actions/checkout@v4
+
+#       - name: 🔐 Connect to Server & Deploy
+#         uses: appleboy/ssh-action@v1.1.0
+#         with:
+#           host: ${{ secrets.SSH_HOST }}
+#           username: ${{ secrets.SSH_USER }}
+#           key: ${{ secrets.SERVER_SSH_KEY }}  # <-- secret name match করতে হবে
+#           script: |
+#             cd ${{ secrets.SSH_PATH }}
+#             ./deploy.sh
+
+
+
+name: Deploy Pigeon
 
 on:
   push:
@@ -10,15 +37,31 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 🛎️ Checkout code
-        uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-      - name: 🔐 Connect to Server & Deploy
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install dependencies & build
+        run: |
+          npm install
+          npm run build
+
+      - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.1.0
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SERVER_SSH_KEY }}  # <-- secret name match করতে হবে
+          key: ${{ secrets.SSH_KEY }}
+          port: 22
           script: |
-            cd ${{ secrets.SSH_PATH }}
-            ./deploy.sh
+            cd /var/www/your_project
+            git pull origin main
+            rm -rf dist/      # TypeScript project
+            rm -rf .next/     # Next.js project
+            npm install
+            npm run build
+            pm2 restart all
