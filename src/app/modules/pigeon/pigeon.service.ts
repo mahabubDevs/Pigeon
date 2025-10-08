@@ -503,7 +503,10 @@ const updatePigeonToDB = async (
 const getAllPigeonsFromDB = async (
   query: any
 ): Promise<{ data: IPigeon[]; pagination: any }> => {
-  let baseQuery = Pigeon.find({ status: { $ne: "Deleted" } });
+  let baseQuery = Pigeon.find({ status: { $ne: "Deleted" },$or: [
+    { verified: true },
+    { iconic: true }
+  ] });
 
   const qb = new QueryBuilder<IPigeon>(baseQuery, query);
 
