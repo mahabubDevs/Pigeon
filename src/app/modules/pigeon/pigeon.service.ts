@@ -541,6 +541,46 @@ const getAllPigeonsFromDB = async (
 };
 
 
+const getAllPigeonsAdminsFromDB = async (
+  query: any
+): Promise<{ data: IPigeon[]; pagination: any }> => {
+  let baseQuery = Pigeon.find({ status: { $ne: "Deleted" },
+    
+   });
+
+  const qb = new QueryBuilder<IPigeon>(baseQuery, query);
+
+  qb.search(["ringNumber", "name", "country",])
+    .filter();
+     // Step 3: Explicit status filter
+  if (query.status) {
+    qb.modelQuery = qb.modelQuery.where({
+      status: new RegExp(`^${query.status}$`, "i") // case-insensitive exact match
+    });
+  }
+
+      qb.sort()
+    .paginate()
+    .fields()
+    .populate(["user", "fatherRingId", "motherRingId", "breeder"], {
+      user: "name email",
+      fatherRingId: "ringNumber name",
+      motherRingId: "ringNumber name",
+      breeder: "breederName"
+    });
+
+  // Execute query
+  const dataRaw = await qb.modelQuery.lean();
+
+  // Safe type assertion through unknown
+  const data: IPigeon[] = dataRaw as unknown as IPigeon[];
+
+  const pagination = await qb.getPaginationInfo();
+
+  return { pagination ,data  };
+};
+
+
 // const getAllPigeonsFromDB = async (
 //   query: any
 // ): Promise<{ data: IPigeon[]; pagination: any }> => {
@@ -1029,6 +1069,7 @@ export const PigeonService = {
   createPigeonToDB,
   updatePigeonToDB,
   getAllPigeonsFromDB,
+  getAllPigeonsAdminsFromDB,
   getPigeonDetailsFromDB,
   deletePigeonFromDB,
   getPigeonWithFamily,

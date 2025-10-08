@@ -21,6 +21,7 @@ router
         PigeonController.createPigeon 
     )
     .get(PigeonController.getAllPigeons)
+    .get(PigeonController.getAllPigeonsAdmin)
 router
 .route("/export")
   .get(

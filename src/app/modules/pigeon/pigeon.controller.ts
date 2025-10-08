@@ -62,6 +62,18 @@ const getAllPigeons = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
+// Get all pigeons admins
+
+const getAllPigeonsAdmin = catchAsync(async (req: Request, res: Response) => {
+  const result = await PigeonService.getAllPigeonsAdminsFromDB(req.query);
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: "Pigeons retrieved successfully",
+    data: result,
+  });
+});
 
 // Get single pigeon details
 
@@ -219,6 +231,7 @@ export const PigeonController = {
   createPigeon,
   updatePigeon,
   getAllPigeons,
+  getAllPigeonsAdmin,
   getPigeonDetails,
   deletePigeon,
   getPigeonWithFamily,
