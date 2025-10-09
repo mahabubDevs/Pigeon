@@ -64,7 +64,7 @@ const getAllUsers = async (query: GetAllUsersQuery = {}): Promise<{
     totalPage: number;
   };
 }> => {
-  const builder = new QueryBuilder<IUser>(User.find(), query)
+  const builder = new QueryBuilder<IUser>(User.find({ role: { $ne: 'SUPER_ADMIN' } }), query)
     .search(['firstName', 'lastName', 'email', 'phoneNumber'])
     .filter()
     .sort()
