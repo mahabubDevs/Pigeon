@@ -70,6 +70,14 @@ export const handleSubscriptionCreated = async (data: Stripe.Subscription) => {
     const price = subscription.items.data[0].price.unit_amount! / 100;
     const remaining = subscription.items.data[0].quantity || 1;
 
+
+    // 8️⃣ Duplicate check
+const existingSub = await Subscription.findOne({ subscriptionId: subscription.id });
+if (existingSub) {
+  console.log("⚠️ Subscription already exists in DB:", existingSub._id);
+  return; // Duplicate হলে নতুন save করা বন্ধ
+}
+
     // 8️⃣ Create subscription in DB
     const newSubscription = new Subscription({
       user: existingUser._id,
