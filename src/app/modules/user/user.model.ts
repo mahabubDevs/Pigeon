@@ -65,6 +65,11 @@ const userSchema = new Schema<IUser, UserModal>(
             type:Boolean,
             default: true,
         },
+        hasUsedFreeTrial: {
+            type: Boolean,
+            default: false,
+            },
+            stripeCustomerId: { type: String, default: null },
         stripeAccountId: { type: String, default: null },
 
     

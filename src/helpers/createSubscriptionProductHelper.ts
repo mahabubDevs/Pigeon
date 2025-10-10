@@ -3,6 +3,7 @@ import { IPackage } from "../app/modules/package/package.interface";
 import stripe from "../config/stripe";
 import ApiError from "../errors/ApiErrors";
 import config from "../config";
+import { User } from "../app/modules/user/user.model";
 
 export const createSubscriptionProduct = async ( payload: Partial<IPackage>): Promise<{ productId: string; paymentLink: string } | null> => {
 
@@ -51,6 +52,18 @@ export const createSubscriptionProduct = async ( payload: Partial<IPackage>): Pr
         throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to create price in Stripe");
     }
 
+ // 4️⃣ Find or create Stripe Customer
+//   let customerId = User.stripeCustomerId;
+//   if (!customerId) {
+//     const stripeCustomer = await stripe.customers.create({
+//       email: User.email,
+//       name: User.name,
+//     });
+//     customerId = stripeCustomer.id;
+//     // Save to user DB (pseudo)
+//     // await User.findByIdAndUpdate(user.id, { stripeCustomerId: customerId });
+//   }
+    
     // Create a Payment Link
     const paymentLink = await stripe.paymentLinks.create({
         line_items: [
@@ -65,6 +78,7 @@ export const createSubscriptionProduct = async ( payload: Partial<IPackage>): Pr
                 url: 'https://thepigeonhub.com/payment-success', // Redirect URL on successful payment
             },
         },
+        // customer: customerId,
         metadata: {
             productId: product.id,
         },

@@ -36,6 +36,10 @@ const packageSchema = new Schema<IPackage, PackageModel>(
             type: String,
             required: true
         },
+        isFreeTrial: {
+            type: Boolean,
+            default: false
+            },
        
         loginLimit: {
             type: Number,

@@ -27,6 +27,8 @@ export type IUser = {
     profile: string;
     verified: boolean;
     status: boolean;
+    hasUsedFreeTrial: boolean;
+    stripeCustomerId: string;
     authentication?: IAuthenticationProps;
     accountInformation?: IStripeAccountInfo;
     stripeAccountId?: string;

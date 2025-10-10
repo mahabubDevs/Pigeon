@@ -51,6 +51,18 @@ export const handleSubscriptionCreated = async (data: Stripe.Subscription) => {
       throw new ApiError(StatusCodes.NOT_FOUND, `Pricing plan not found for Price ID: ${priceId}`);
     }
 
+      // ✅ Step: Check Free-Trial Logic
+      if (pricingPlan.isFreeTrial) {
+        if (existingUser.hasUsedFreeTrial) {
+          console.log("🚫 User already used the free-trial before. Skipping subscription creation.");
+          return; // Stop here, don't create another subscription
+        } else {
+          existingUser.hasUsedFreeTrial = true;
+          await existingUser.save();
+          console.log("✅ Marked user as having used free-trial");
+        }
+      }
+
     // 6️⃣ Retrieve invoice for trxId and amountPaid
     let trxId = '';
     let amountPaid = 0;
