@@ -93,8 +93,22 @@ if (existingSub) {
       remaining,
     });
 
-    await newSubscription.save();
-    console.log("✅ Subscription saved to DB:", newSubscription._id);
+    // await newSubscription.save();
+    // console.log("✅ Subscription saved to DB:", newSubscription._id);
+
+try {
+  await newSubscription.save();
+  console.log("✅ Subscription saved to DB:", newSubscription._id);
+} catch (err: any) {
+  if (err.code === 11000) {
+    // 11000 = Mongo duplicate key error
+    console.log("⚠️ Duplicate subscription ignored:", subscriptionId);
+    return;
+  }
+  throw err;
+}
+
+
 
     // 9️⃣ Update user role
     await User.findByIdAndUpdate(
