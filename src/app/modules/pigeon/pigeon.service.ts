@@ -1048,6 +1048,22 @@ const searchPigeonsByNameFromDB = async (query: string) => {
 
   return pigeons;
 };
+const searchAllPigeonsByNameFromDB = async (query: string) => {
+  const pigeons = await Pigeon.find({
+    $and: [
+      { status: { $ne: "Deleted" } },
+      // { $or: [{ verified: true }, { iconic: true }] },
+      {
+        $or: [
+          { name: { $regex: query, $options: "i" } },
+          { ringNumber: { $regex: query, $options: "i" } }
+        ]
+      }
+    ]
+  }).select("_id name ringNumber");
+
+  return pigeons;
+};
 
 
 
@@ -1078,6 +1094,7 @@ export const PigeonService = {
   exportToPDF,
   getMyPigeonsFromDB,
   searchPigeonsByNameFromDB,
+  searchAllPigeonsByNameFromDB,
   getMyAllPigeonDetailsFromDB,
   togglePigeonStatusInDB
 };

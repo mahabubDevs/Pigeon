@@ -214,6 +214,22 @@ const searchPigeonsByName = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
+const searchAllPigeonsByName = catchAsync(async (req: Request, res: Response) => {
+  const { searchTerm } = req.query;
+
+  if (!searchTerm || typeof searchTerm !== "string") {
+    throw new ApiError(StatusCodes.BAD_REQUEST, "Query param ?q required");
+  }
+
+  const result = await PigeonService.searchAllPigeonsByNameFromDB(searchTerm);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Pigeons search result",
+    data: result,
+  });
+});
 
 const togglePigeonStatus = catchAsync(async (req: Request, res: Response) => {
   const result = await PigeonService.togglePigeonStatusInDB(req.params.id);
@@ -240,6 +256,7 @@ export const PigeonController = {
   exportPigeonsPDF,
   getMyPigeons,
   searchPigeonsByName,
+  searchAllPigeonsByName,
   getMyAllPigeons,
   togglePigeonStatus
  
