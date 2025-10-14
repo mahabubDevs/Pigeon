@@ -6,6 +6,7 @@ import bcrypt from "bcrypt";
 import config from "../../../config";
 import {emailHelper }  from "../../../helpers/emailHelper";
 import QueryBuilder from "../../../util/queryBuilder";
+import { Subscription } from "../subscription/subscription.model";
 
 interface GetAllUsersQuery {
   searchTerm?: string;
@@ -56,7 +57,7 @@ const createUser = async (payload: Partial<IUser>): Promise<IUser> => {
  // Get All Users
  
 const getAllUsers = async (query: GetAllUsersQuery = {}): Promise<{
-  users: IUser[];
+  users: any[];
   pagination: {
     total: number;
     limit: number;
@@ -64,6 +65,7 @@ const getAllUsers = async (query: GetAllUsersQuery = {}): Promise<{
     totalPage: number;
   };
 }> => {
+  // 1️⃣ Fetch users
   const builder = new QueryBuilder<IUser>(User.find({ role: { $ne: 'SUPER_ADMIN' } }), query)
     .search(['firstName', 'lastName', 'email', 'phoneNumber'])
     .filter()
@@ -74,8 +76,27 @@ const getAllUsers = async (query: GetAllUsersQuery = {}): Promise<{
   const users = await builder.modelQuery;
   const pagination = await builder.getPaginationInfo();
 
-  return { pagination,users  };
+  // 2️⃣ Extract user IDs
+  const userIds = users.map(u => u._id);
+
+  // 3️⃣ Fetch active subscriptions
+  const subscriptions = await Subscription.find({
+    user: { $in: userIds },
+    status: 'active'
+  }).populate<{ package: { title?: string } }>('package', 'title'); // <-- note 'title'
+
+  // 4️⃣ Map subscriptions to users
+  const usersWithPlan = users.map(u => {
+    const sub = subscriptions.find(s => s.user.toString() === u._id.toString());
+    return {
+      ...(typeof (u as any).toObject === 'function' ? (u as any).toObject() : u),
+      currentPlan: sub && sub.package?.title ? sub.package.title : 'N/A'
+    };
+  });
+
+  return { pagination, users: usersWithPlan };
 };
+
 
 
  // Get Single User by ID

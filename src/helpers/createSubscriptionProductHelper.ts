@@ -82,6 +82,7 @@ export const createSubscriptionProduct = async ( payload: Partial<IPackage>): Pr
         metadata: {
             productId: product.id,
         },
+        
     });
 
     if (!paymentLink.url) {

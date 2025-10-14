@@ -45,9 +45,11 @@ const createUserToDB = async (payload: Partial<IUser>): Promise<IUser> => {
         otp: otp,
         email: createUser.email!
     };
+    // console.log(values);
 
     const createAccountTemplate = emailTemplate.createAccount(values);
     emailHelper.sendEmail(createAccountTemplate);
+    
 
     //save to DB
     const authentication = {
@@ -128,7 +130,7 @@ const getUserProfileFromDB = async (
     user: _id,
     status: "active",
   })
-    .populate("package", "name price") // package details আনতে চাইলে
+    .populate("package", "title  price") // package details আনতে চাইলে
     .sort({ createdAt: -1 });
 
   return {
@@ -136,10 +138,11 @@ const getUserProfileFromDB = async (
     totalPigeons,
     subscription: subscription
   ? {
-      package: (subscription.package as any)?.name || "Unknown",
+      package: (subscription.package as any)?.title || "Unknown",
       startDate: subscription.currentPeriodStart,
       endDate: subscription.currentPeriodEnd,
       status: subscription.status,
+ 
     }
   : null,
   };

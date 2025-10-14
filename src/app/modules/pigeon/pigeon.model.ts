@@ -16,6 +16,7 @@ const pigeonSchema: Schema<IPigeon> = new Schema(
     },
     name: {
       type: String,
+      unique: true,
     },
     country: {
       type: String,
@@ -45,8 +46,8 @@ const pigeonSchema: Schema<IPigeon> = new Schema(
     },
     gender: {
       type: String,
-      enum: ["Cock", "Hen", "Unknown"],
-      default: "Unknown",
+      enum: ["Cock", "Hen", "Unspecified"],
+      default: "Unspecified",
     },
     status: {
       type: String,
@@ -90,6 +91,9 @@ const pigeonSchema: Schema<IPigeon> = new Schema(
         place: { type: String,},
       },
     ],
+    addresults: {
+      type: String,
+    },
     fatherRingId: {
       type: Schema.Types.ObjectId,
       ref: "Pigeon",

@@ -13,6 +13,7 @@ import { emailHelper } from "../../../helpers/emailHelper";
 import { JwtPayload } from "jsonwebtoken";
 import { USER_ROLES } from "../../../enums/user";
 import { User } from "../user/user.model";
+import { UserLoft } from "../loft/loft.model";
 
 // Create Pigeon in DB
 
@@ -650,43 +651,53 @@ const getMyAllPigeonDetailsFromDB = async (
   userId: string,
   query: any
 ): Promise<{ data: IPigeon[]; pagination: any }> => {
-  
-  // Step 1: Base query (only this user's pigeons, skip Deleted)
-  let baseQuery = Pigeon.find({ user: userId, status: { $ne: "Deleted" } });
+  // 🕊️ Step 1: প্রথমে Loft থেকে সব pigeonId গুলো বের করি
+  const loftPigeons = await UserLoft.find({ user: userId }).select("pigeon");
+  const loftPigeonIds = loftPigeons.map((item) => item.pigeon);
 
+  // 🕊️ Step 2: Query তৈরি করি যাতে user নিজে তৈরি করেছে বা loft এ আছে — দুইটাই আসে
+  const baseQuery = Pigeon.find({
+    $and: [
+      { status: { $ne: "Deleted" } },
+      {
+        $or: [
+          { user: userId }, // নিজের তৈরি
+          { _id: { $in: loftPigeonIds } }, // loft এ থাকা
+        ],
+      },
+    ],
+  });
+
+  // 🧠 Step 3: Query Builder দিয়ে filter/search/pagination
   const qb = new QueryBuilder<IPigeon>(baseQuery, query);
 
-  // Step 2: Search only on these fields (exclude status from search)
-  qb.search(["ringNumber", "name", "country", ])
-    .filter(); // other filters except status
+  qb.search(["ringNumber", "name", "country"])
+    .filter();
 
-  // Step 3: Explicit status filter
   if (query.status) {
     qb.modelQuery = qb.modelQuery.where({
-      status: new RegExp(`^${query.status}$`, "i") // case-insensitive exact match
+      status: new RegExp(`^${query.status}$`, "i"),
     });
   }
 
-  // Step 4: Sort, paginate, fields, populate
   qb.sort()
     .paginate()
     .fields()
-    .populate(["user", "fatherRingId", "motherRingId","breeder"], {
+    .populate(["user", "fatherRingId", "motherRingId", "breeder"], {
       user: "name email",
       fatherRingId: "ringNumber name",
       motherRingId: "ringNumber name",
-      breeder: "breederName"
+      breeder: "breederName",
     });
 
-  // Execute query
+  // 🧾 Step 4: Data execute + pagination info
   const dataRaw = await qb.modelQuery.lean();
   const data: IPigeon[] = dataRaw as unknown as IPigeon[];
-
   const pagination = await qb.getPaginationInfo();
 
-  // Always return empty array if no data
   return { pagination, data };
 };
+
 
 
 // Delete Pigeon (soft delete: set status = "Deleted")
@@ -845,8 +856,8 @@ const getSiblings = async (pigeonId: string) => {
 
   // Step 4: Map type to each sibling
   const siblings = [
-    ...fullSiblings.map((s) => ({ ...s, type: "fullSibling" })),
-    ...halfSiblings.map((s) => ({ ...s, type: "halfSibling" })),
+    ...fullSiblings.map((s) => ({ ...s, type: "Full Sibling" })),
+    ...halfSiblings.map((s) => ({ ...s, type: "Half Sibling" })),
   ];
 
   return siblings;

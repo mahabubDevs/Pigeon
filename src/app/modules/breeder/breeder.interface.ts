@@ -3,7 +3,7 @@ export interface IBreeder {
   loftName: string;
   breederName: string;
   country: string;
-  email: string;
+  email?: string;
   phone: string;
   status?: boolean;
   experience: string;

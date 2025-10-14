@@ -37,7 +37,7 @@ export const createPigeonZodSchema = z.object({
     z.number({ required_error: "Breeder Rating is required" }).min(0).max(100)
   ).optional(),
   racingRating: z.number().optional(),
-  gender: z.enum(["Cock", "Hen", "Unknown"], { required_error: "Gender is required" }),
+  gender: z.enum(["Cock", "Hen", "Unspecified"], { required_error: "Gender is required" }),
   status: z.string({ required_error: "Status is required" }).optional(),
   location: z.string({ required_error: "Location is required" }).optional(),
   verified: z.boolean().optional(), // Admin can set
@@ -51,6 +51,7 @@ export const createPigeonZodSchema = z.object({
   ownershipPhoto: z.string().optional(),
   pedigreePhoto: z.string().optional(),
   DNAPhoto: z.string().optional(),
+  addresults: z.string().optional(),
   results: z
     .preprocess((val) => {
       if (!val) return undefined; // results না দিলে optional
@@ -81,6 +82,7 @@ export const updatePigeonZodSchema = z.object({
   color: z.string().optional(),
   pattern: z.string().optional(),
   racherRating: z.string().optional(),
+  addresults: z.string().optional(),
   // racherRating: z.preprocess(
   //   val => (val !== undefined && val !== "" ? Number(val) : undefined),
   //   z.number().min(0).max(100).optional()

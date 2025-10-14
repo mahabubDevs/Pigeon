@@ -78,8 +78,8 @@ importers:
         specifier: ^4.7.5
         version: 4.8.1
       stripe:
-        specifier: ^16.12.0
-        version: 16.12.0
+        specifier: ^19.1.0
+        version: 19.1.0(@types/node@24.2.1)
       twilio:
         specifier: ^5.4.0
         version: 5.8.0
@@ -1789,9 +1789,14 @@ packages:
     resolution: {integrity: sha512-4gB8na07fecVVkOI6Rs4e7T6NOTki5EmL7TUduTs6bu3EdnSycntVJ4re8kgZA+wx9IueI2Y11bfbgwtzuE0KQ==}
     engines: {node: '>=0.10.0'}
 
-  stripe@16.12.0:
-    resolution: {integrity: sha512-H7eFVLDxeTNNSn4JTRfL2//LzCbDrMSZ+2q1c7CanVWgK2qIW5TwS+0V7N9KcKZZNpYh/uCqK0PyZh/2UsaAtQ==}
-    engines: {node: '>=12.*'}
+  stripe@19.1.0:
+    resolution: {integrity: sha512-FjgIiE98dMMTNssfdjMvFdD4eZyEzdWAOwPYqzhPRNZeg9ggFWlPXmX1iJKD5pPIwZBaPlC3SayQQkwsPo6/YQ==}
+    engines: {node: '>=16'}
+    peerDependencies:
+      '@types/node': '>=16'
+    peerDependenciesMeta:
+      '@types/node':
+        optional: true
 
   strnum@1.1.2:
     resolution: {integrity: sha512-vrN+B7DBIoTTZjnPNewwhx6cBA/H+IS7rfW68n7XxC1y7uoiGQBxaKzqucGUgavX15dJgiGztLJ8vxuEzwqBdA==}
@@ -4003,10 +4008,11 @@ snapshots:
 
   strip-json-comments@2.0.1: {}
 
-  stripe@16.12.0:
+  stripe@19.1.0(@types/node@24.2.1):
     dependencies:
-      '@types/node': 24.2.1
       qs: 6.14.0
+    optionalDependencies:
+      '@types/node': 24.2.1
 
   strnum@1.1.2:
     optional: true

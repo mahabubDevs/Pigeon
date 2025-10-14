@@ -6,6 +6,8 @@ import { PigeonService } from "./pigeon.service";
 import ApiError from "../../../errors/ApiErrors";
 // import { PigeonValidation } from "./pigeon.validation";
 import { IUser } from "../user/user.interface";
+import { Pigeon } from "./pigeon.model";
+import { UserLoft } from "../loft/loft.model";
 
 // Create Pigeon form-data: data (JSON string) + image[fieldName] (multiple files)
 
@@ -243,6 +245,41 @@ const togglePigeonStatus = catchAsync(async (req: Request, res: Response) => {
 });
 
 
+
+
+const addToLoft = catchAsync(async (req: Request, res: Response) => {
+
+  const user = req.user as { _id: string }; // Type assertion to include _id
+
+  if (!user || !user._id) {
+    throw new ApiError(401, "User not authenticated");
+  }
+  const { pigeonId } = req.body; // frontend থেকে pigeon id পাঠাবে
+  
+  const userId = user._id;   // লগইন করা user
+
+  // প্রথমে check করো pigeon টা আসলেই আছে কিনা এবং verified কিনা
+  const pigeon = await Pigeon.findOne({ _id: pigeonId, verified: true });
+  if (!pigeon) {
+    throw new ApiError(404, "Pigeon not found or not verified");
+  }
+
+  // তারপর সেই pigeon user এর Loft এ add করো
+  const added = await UserLoft.findOneAndUpdate(
+    { user: userId, pigeon: pigeon._id }, // খুঁজবে আগেই আছে কিনা
+    { user: userId, pigeon: pigeon._id }, // না থাকলে এই data insert করবে
+    { upsert: true, new: true, setDefaultsOnInsert: true }
+  );
+
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: "Pigeon added to your loft successfully",
+    data: added,
+  });
+});
+
+
 export const PigeonController = {
   createPigeon,
   updatePigeon,
@@ -258,6 +295,7 @@ export const PigeonController = {
   searchPigeonsByName,
   searchAllPigeonsByName,
   getMyAllPigeons,
-  togglePigeonStatus
+  togglePigeonStatus,
+  addToLoft
  
 };

@@ -16,6 +16,7 @@ export type IPackage = {
     createdBy: Types.ObjectId;
     payoutAccountId?: string;
     admin: Types.ObjectId;
+    type?: string;
 };
 
 

@@ -64,7 +64,7 @@ router
 router
   .route('/siblings/:id')
   
-  .get(auth( USER_ROLES.PAIDUSER,USER_ROLES.ADMIN), PigeonController.getSiblingsController);
+  .get(auth( USER_ROLES.PAIDUSER,USER_ROLES.ADMIN,USER_ROLES.SUPER_ADMIN), PigeonController.getSiblingsController);
 
 router
   .route('/my-pigeons/:id')
@@ -77,5 +77,14 @@ router
     PigeonController.togglePigeonStatus
   );
 
+
+
+
+  // Loft এ pigeon add করার জন্য
+router.post(
+  "/add",
+  auth(USER_ROLES.USER, USER_ROLES.PAIDUSER, USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN),
+  PigeonController.addToLoft
+);
 
 export const PigeonRoutes = router;
