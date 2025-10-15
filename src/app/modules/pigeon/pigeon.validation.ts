@@ -24,7 +24,8 @@ export const createPigeonZodSchema = z.object({
       .max(new Date().getFullYear())
   ).optional(),
   shortInfo: z.string({ required_error: "Short Info is required" }).optional(),
-  breeder: z.string({ required_error: "Breeder is required" }).optional(),
+  breeder: z.string().optional().nullable(),
+
   color: z.string({ required_error: "Color is required" }).optional(),
   pattern: z.string().optional(),
   // racherRating: z.preprocess(
@@ -37,7 +38,7 @@ export const createPigeonZodSchema = z.object({
     z.number({ required_error: "Breeder Rating is required" }).min(0).max(100)
   ).optional(),
   racingRating: z.number().optional(),
-  gender: z.enum(["Cock", "Hen", "Unspecified"], { required_error: "Gender is required" }),
+  gender: z.enum(["Cock", "Hen", "Unspecified"], { required_error: "Gender is required" }).optional(),
   status: z.string({ required_error: "Status is required" }).optional(),
   location: z.string({ required_error: "Location is required" }).optional(),
   verified: z.boolean().optional(), // Admin can set

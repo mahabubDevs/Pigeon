@@ -4,7 +4,7 @@ import { Subscription } from "../subscription/subscription.model";
 export const DashboardService = {
   getDashboardStats: async (startDate?: Date) => {
     // Base query to exclude soft deleted pigeons for stats
-    const baseQuery: any = { status: { $ne: "Deleted" } };
+    const baseQuery: any = { status: { $ne: "Deleted" }, };
     if (startDate) baseQuery.createdAt = { $gte: startDate }; // date filter applied only for stats
 
     // Total pigeons
@@ -34,7 +34,7 @@ export const DashboardService = {
       subscriptionRevenueAgg.length > 0 ? subscriptionRevenueAgg[0].totalRevenue : 0;
 
     // Recent pigeons: always last 5 pigeons ignoring date filter
-    const recentPigeons = await Pigeon.find({ status: { $ne: "Deleted" } })
+    const recentPigeons = await Pigeon.find({ status: { $ne: "Deleted" },name: { $exists: true, $ne: "" } })
       .sort({ createdAt: -1 })
       .limit(5)
       .populate([

@@ -93,7 +93,7 @@ const getPigeonDetails = catchAsync(async (req: Request, res: Response) => {
 // Delete pigeon
 
 const deletePigeon = catchAsync(async (req: Request, res: Response) => {
-  const result = await PigeonService.deletePigeonFromDB(req.params.id);
+  const result = await PigeonService.deletePigeonFromDB(req.params.id, req.user);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -262,6 +262,17 @@ const addToLoft = catchAsync(async (req: Request, res: Response) => {
   const pigeon = await Pigeon.findOne({ _id: pigeonId, verified: true });
   if (!pigeon) {
     throw new ApiError(404, "Pigeon not found or not verified");
+  }
+
+
+    // 2️⃣ Check if already added in UserLoft
+  const existing = await UserLoft.findOne({ user: userId, pigeon: pigeon._id });
+  if (existing) {
+    return sendResponse(res, {
+      success: false,
+      statusCode: 400,
+      message: "Already added to your loft",
+    });
   }
 
   // তারপর সেই pigeon user এর Loft এ add করো
