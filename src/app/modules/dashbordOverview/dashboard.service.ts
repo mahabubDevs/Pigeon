@@ -8,7 +8,12 @@ export const DashboardService = {
     if (startDate) baseQuery.createdAt = { $gte: startDate }; // date filter applied only for stats
 
     // Total pigeons
-    const totalPigeons = await Pigeon.countDocuments(baseQuery);
+    // const totalPigeons = await Pigeon.countDocuments(baseQuery);
+    const totalPigeons = await Pigeon.countDocuments({
+  ...baseQuery,               // আগের query conditions
+  name: { $exists: true, $ne: "" }, // name আছে এবং খালি না
+});
+
 
     // Verified pigeons
     const verifiedPigeons = await Pigeon.countDocuments({
