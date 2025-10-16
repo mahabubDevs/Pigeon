@@ -128,7 +128,7 @@ const getUserProfileFromDB = async (
   // Find active subscription (if exists)
   const subscription = await Subscription.findOne({
     user: _id,
-    status: "active",
+    // status: "active",
   })
     .populate("package", "title  price") // package details আনতে চাইলে
     .sort({ createdAt: -1 });
