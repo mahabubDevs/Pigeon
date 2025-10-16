@@ -8,7 +8,7 @@ const router = express.Router();
 
 router.post(
   "/cancel",
-  auth(USER_ROLES.USER, USER_ROLES.PAIDUSER),
+  auth(USER_ROLES.USER, USER_ROLES.PAIDUSER,USER_ROLES.SUPER_ADMIN),
   SubscriptionController.cancelSubscription
 );
 
