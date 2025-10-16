@@ -68,16 +68,21 @@ export const handleSubscriptionCreated = async (data: Stripe.Subscription) => {
     let amountPaid = 0;
     try {
       const invoice = await stripe.invoices.retrieve(subscription.latest_invoice as string);
-      trxId = invoice?.payment_intent as string;
+      // trxId = invoice?.payment_intent as string;
       amountPaid = invoice?.total ? invoice.total / 100 : 0;
       console.log("Invoice retrieved:", invoice?.id, "Amount paid:", amountPaid);
     } catch (err) {
       console.warn("⚠️ Invoice not found or error retrieving invoice:", err);
     }
 
+
+
+
+
+    
     // 7️⃣ Prepare subscription data
-    const currentPeriodStart = subscription.current_period_start;
-    const currentPeriodEnd = subscription.current_period_end;
+    // const currentPeriodStart = subscription.current_period_start;
+    // const currentPeriodEnd = subscription.current_period_end;
     const subscriptionId = subscription.id;
     const price = subscription.items.data[0].price.unit_amount! / 100;
     const remaining = subscription.items.data[0].quantity || 1;
@@ -100,8 +105,8 @@ if (existingSub) {
       amountPaid,
       price,
       subscriptionId,
-      currentPeriodStart: new Date(currentPeriodStart * 1000).toISOString(),
-      currentPeriodEnd: new Date(currentPeriodEnd * 1000).toISOString(),
+      // currentPeriodStart: new Date(currentPeriodStart * 1000).toISOString(),
+      // currentPeriodEnd: new Date(currentPeriodEnd * 1000).toISOString(),
       remaining,
     });
 

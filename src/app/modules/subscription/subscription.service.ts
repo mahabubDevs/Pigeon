@@ -11,7 +11,7 @@ import { User } from "../user/user.model";
 const cancelSubscription = async (user: JwtPayload) => {
 
     // 1️⃣ DB থেকে active subscription খুঁজে বের করো
-    const subscription = await Subscription.findOne({ user: user.id, status: "active" });
+    const subscription = await Subscription.findOne({ user: user._id, status: "active" });
     if (!subscription) {
         throw new Error("Active subscription not found");
     }

@@ -92,9 +92,11 @@ const pigeonSchema: Schema<IPigeon> = new Schema(
         place: { type: String,},
       },
     ],
-    addresults: {
+    addresults: [
+      {
       type: String,
-    },
+    }
+    ],
     fatherRingId: {
       type: Schema.Types.ObjectId,
       ref: "Pigeon",

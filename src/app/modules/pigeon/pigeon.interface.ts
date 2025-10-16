@@ -8,7 +8,7 @@ export interface IPigeon {
   birthYear?: number;
   shortInfo?: string;
   breeder?:  mongoose.Types.ObjectId;
-  addresults?: string;
+  addresults?: string[];
   color?: string;
   catagory?: string;
   pattern?: string;

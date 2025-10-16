@@ -52,7 +52,7 @@ export const createPigeonZodSchema = z.object({
   ownershipPhoto: z.string().optional(),
   pedigreePhoto: z.string().optional(),
   DNAPhoto: z.string().optional(),
-  addresults: z.string().optional(),
+  addresults: z.array(z.string()).optional(),
   results: z
     .preprocess((val) => {
       if (!val) return undefined; // results না দিলে optional
