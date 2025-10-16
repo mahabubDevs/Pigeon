@@ -1,0 +1,138 @@
+import mongoose, { Schema, Model } from "mongoose";
+import { ILofts,  } from "./loft.interface";
+import { number, string } from "zod";
+
+const loftSchema: Schema<ILofts> = new Schema(
+  {
+    user: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+    //   required: true,
+    },
+    ringNumber: {
+      type: String,
+      required: true,
+    //   unique: true,
+    },
+    name: {
+      type: String,
+    //   unique: true,
+    },
+    country: {
+      type: String,
+      required: false,   
+     },
+    birthYear: {
+      type: Number,
+      required: false,
+    },
+    shortInfo: {
+      type: String,
+    },
+    breeder: {
+      type: Schema.Types.ObjectId,
+      ref: "Breeder",
+      required: false,
+    },
+    color: {
+      type: String,
+    },
+    pattern: {
+      type: String,
+    },
+    racingRating: { type: Number, default: 0 },
+    breederRating: {
+      type: Number,
+      default: 0,
+    },
+    gender: {
+      type: String,
+      enum: ["Cock", "Hen", "Unspecified"],
+      default: "Unspecified",
+    },
+    status: {
+      type: String,
+    },
+    location: {
+      type: String,
+    },
+    racherRating: {
+      type: String,
+      
+    },
+    notes: {
+      type: String,
+    },
+    photos: [
+      {
+        type: String, // photo URL store 
+      },
+    ],
+    pigeonPhoto: {
+      type: String,
+    },
+    eyePhoto:{
+      type: String,
+    },
+    ownershipPhoto:{
+      type: String,
+    },
+    pedigreePhoto: {
+      type: String,
+    },
+    DNAPhoto: {
+      type: String,
+    },
+    results: [
+      {
+        name: { type: String,  },
+        date: { type: Date,  },
+        distance: { type: String,},
+        total: { type: Number,  },
+        place: { type: String,},
+      },
+    ],
+    addresults: [
+      {
+      type: String,
+    }
+    ],
+    fatherRingId: {
+      type: Schema.Types.ObjectId,
+      ref: "Pigeon",
+    },
+    motherRingId: {
+      type: Schema.Types.ObjectId,
+      ref: "Pigeon",
+    },
+    catagory: {
+      type: String,
+      default: "Other",
+    },
+
+    // only can field use admin 
+    verified: {
+      type: Boolean,
+      default: false,
+    },
+    iconic: {
+      type: Boolean,
+      default: false,
+    },
+    iconicScore: {
+      type: Number,
+      default: 0,
+    },
+    remaining:[
+      {
+        type:String,
+      },
+    ]
+},
+  {
+    timestamps: true,
+  }
+);
+
+export const Loft: Model<ILofts> =
+  mongoose.models.Loft || mongoose.model<ILofts>("Loft", loftSchema);

@@ -267,7 +267,7 @@ const resendVerificationEmailToDB = async (email:string) => {
         email: existingUser.email,
     };
 
-    const accountEmailTemplate = emailTemplate.createAccount(emailValues);
+    const accountEmailTemplate = emailTemplate.resentOpt(emailValues);
     emailHelper.sendEmail(accountEmailTemplate);
   
     // Update user with authentication details

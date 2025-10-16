@@ -13,8 +13,9 @@ import { emailHelper } from "../../../helpers/emailHelper";
 import { JwtPayload } from "jsonwebtoken";
 import { USER_ROLES } from "../../../enums/user";
 import { User } from "../user/user.model";
-import { Loft, UserLoft } from "../loft/loft.model";
+import {  UserLoft } from "../loft/loft.model";
 import { Breeder } from "../breeder/breeder.model";
+import { Loft } from "../loft/verifyloft.model";
 
 // Create Pigeon in DB
 

@@ -57,31 +57,44 @@ export const DashboardController = {
 
   // Monthly Revenue for chart/graph
   getMonthlyRevenue: catchAsync(async (req: Request, res: Response) => {
-    const monthlyRevenue = await Subscription.aggregate([
-      { $match: { status: "active" } },
-      {
-        $group: {
-          _id: {
-            year: { $year: "$createdAt" },
-            month: { $month: "$createdAt" },
-          },
-          totalRevenue: { $sum: "$price" },
+  const { year } = req.query;
+
+  // --- Build match filter ---
+  const match: any = { status: "active" };
+
+  if (year) {
+    const y = Number(year);
+    const startOfYear = new Date(y, 0, 1); // Jan 1
+    const endOfYear = new Date(y, 11, 31, 23, 59, 59, 999); // Dec 31
+    match.createdAt = { $gte: startOfYear, $lte: endOfYear };
+  }
+
+  const monthlyRevenue = await Subscription.aggregate([
+    { $match: match },
+    {
+      $group: {
+        _id: {
+          year: { $year: "$createdAt" },
+          month: { $month: "$createdAt" },
         },
+        totalRevenue: { $sum: "$price" },
       },
-      { $sort: { "_id.year": 1, "_id.month": 1 } },
-    ]);
+    },
+    { $sort: { "_id.year": 1, "_id.month": 1 } },
+  ]);
 
-    const formattedRevenue = monthlyRevenue.map(item => ({
-      year: item._id.year,
-      month: item._id.month,
-      revenue: item.totalRevenue,
-    }));
+  const formattedRevenue = monthlyRevenue.map(item => ({
+    year: item._id.year,
+    month: item._id.month,
+    revenue: item.totalRevenue,
+  }));
 
-    sendResponse(res, {
-      statusCode: StatusCodes.OK,
-      success: true,
-      message: "Monthly revenue fetched successfully",
-      data: formattedRevenue,
-    });
-  }),
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: "Monthly revenue fetched successfully",
+    data: formattedRevenue,
+  });
+}),
+
 };
