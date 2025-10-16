@@ -123,7 +123,7 @@ const getUserProfileFromDB = async (
   }
 
   // Count total pigeons created by this user
-  const totalPigeons = await Pigeon.countDocuments({ user: _id });
+  const totalPigeons = await Pigeon.countDocuments({ user: _id, name: { $exists: true, $ne: "" } });
 
   // Find active subscription (if exists)
   const subscription = await Subscription.findOne({
