@@ -13,7 +13,7 @@ export const handleSubscriptionCreated = async (data: Stripe.Subscription) => {
     
     // 1️⃣ Retrieve subscription from Stripe
     const subscription = await stripe.subscriptions.retrieve(data.id);
-    console.log("Subscription retrieved:", subscription.id);
+    console.log("Subscription retrieved:", subscription);
 
     // 2️⃣ Retrieve customer
     const customer = (await stripe.customers.retrieve(subscription.customer as string)) as Stripe.Customer;
@@ -66,17 +66,21 @@ export const handleSubscriptionCreated = async (data: Stripe.Subscription) => {
     // 6️⃣ Retrieve invoice for trxId and amountPaid
     let trxId = '';
     let amountPaid = 0;
-    try {
-      const invoice = await stripe.invoices.retrieve(subscription.latest_invoice as string);
-      // trxId = invoice?.payment_intent as string;
-      amountPaid = invoice?.total ? invoice.total / 100 : 0;
-      console.log("Invoice retrieved:", invoice?.id, "Amount paid:", amountPaid);
-    } catch (err) {
-      console.warn("⚠️ Invoice not found or error retrieving invoice:", err);
-    }
+    // try {
+    //   const invoice = await stripe.invoices.retrieve(subscription.latest_invoice as string);
+      
+    //   // trxId = invoice?.payment_intent as string;
+    //   amountPaid = invoice?.total ? invoice.total / 100 : 0;
+    //   console.log("Invoice retrieved:", invoice?.id, "Amount paid:", amountPaid,"subscripton ",subscription );
+    // } catch (err) {
+    //   console.warn("⚠️ Invoice not found or error retrieving invoice:", err);
+    // }
 
 
 
+const subscriptions = await stripe.subscriptions.retrieve(data.id) as any;
+const start = subscriptions.current_period_start;
+const end = subscriptions.current_period_end;
 
 
     
@@ -105,8 +109,8 @@ if (existingSub) {
       amountPaid,
       price,
       subscriptionId,
-      // currentPeriodStart: new Date(currentPeriodStart * 1000).toISOString(),
-      // currentPeriodEnd: new Date(currentPeriodEnd * 1000).toISOString(),
+      currentPeriodStart: new Date(start * 1000).toISOString(),
+      currentPeriodEnd: new Date(end * 1000).toISOString(),
       remaining,
     });
 
