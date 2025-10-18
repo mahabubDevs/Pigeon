@@ -16,7 +16,7 @@ const pigeonSchema: Schema<IPigeon> = new Schema(
     },
     name: {
       type: String,
-      unique: true,
+      // unique: true,
     },
     country: {
       type: String,
