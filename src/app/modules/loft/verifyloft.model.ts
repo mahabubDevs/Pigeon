@@ -11,7 +11,7 @@ const loftSchema: Schema<ILofts> = new Schema(
     },
     ringNumber: {
       type: String,
-      required: true,
+      // required: true,
     //   unique: true,
     },
     name: {

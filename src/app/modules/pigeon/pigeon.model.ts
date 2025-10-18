@@ -12,7 +12,7 @@ const pigeonSchema: Schema<IPigeon> = new Schema(
     ringNumber: {
       type: String,
       required: true,
-      unique: true,
+      // unique: true,
     },
     name: {
       type: String,

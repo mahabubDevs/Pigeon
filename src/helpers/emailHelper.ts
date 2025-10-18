@@ -89,7 +89,7 @@ const sendEmail = async (values: ISendEmail) => {
     console.log("email function");
     try {
         const info = await transporter.sendMail({
-            from: `"Pigeon" ${config.email.from}`,
+            from: `"ThePigeonHub.com" ${config.email.from}`,
             to: values.to,
             subject: values.subject,
             html: values.html,

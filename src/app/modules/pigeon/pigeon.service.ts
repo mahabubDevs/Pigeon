@@ -280,6 +280,16 @@ const createPigeonToDB = async (data: any, files: any, user: any) => {
 
   const parsedData: any = { ...data };
 
+  // 🔹 API level trimming
+if (parsedData.ringNumber) parsedData.ringNumber = parsedData.ringNumber.trim();
+if (parsedData.name) parsedData.name = parsedData.name.trim();
+if (parsedData.fatherRingId) parsedData.fatherRingId = parsedData.fatherRingId.trim();
+if (parsedData.motherRingId) parsedData.motherRingId = parsedData.motherRingId.trim();
+if (parsedData.breeder) parsedData.breeder = parsedData.breeder.trim();
+
+
+
+
   // Free user validation
   if (user.role === "USER") {
     const pigeonCount = await Pigeon.countDocuments({ user: user._id });
@@ -318,30 +328,61 @@ const createPigeonToDB = async (data: any, files: any, user: any) => {
 
 
 
-console.log("Incoming data:", data);
-console.log("Parsed data before breeder:", parsedData);
+// console.log("Incoming data:", data);
+// console.log("Parsed data before breeder:", parsedData);
 
 
 
-   // Breeder logic
-if (parsedData.breeder && parsedData.breeder.trim() !== "") {
-  console.log("Breeder empty or undefined, deleting key");
-  let existingBreeder = await Breeder.findOne({ breederName: parsedData.breeder });
-  if (existingBreeder) parsedData.breeder = existingBreeder._id;
-  else {
-    const newBreeder = await Breeder.create({
-      loftName: parsedData.breeder,
-      breederName: parsedData.breeder,
-      status: false,
-      experience: "none",
-      country: parsedData.country || "Unknown",
-    });
-    parsedData.breeder = newBreeder._id;
+//    // Breeder logic
+// if (parsedData.breeder && parsedData.breeder.trim() !== "") {
+//   console.log("Breeder empty or undefined, deleting key");
+//   let existingBreeder = await Breeder.findOne({ breederName: parsedData.breeder });
+//   if (existingBreeder) parsedData.breeder = existingBreeder._id;
+//   else {
+//     const newBreeder = await Breeder.create({
+//       loftName: parsedData.breeder,
+//       breederName: parsedData.breeder,
+//       status: false,
+//       experience: "none",
+//       country: parsedData.country || "Unknown",
+//     });
+//     parsedData.breeder = newBreeder._id;
+//   }
+// } else {
+//   // console.log("Breeder exists:", parsedData.breeder);
+//   parsedData.breeder = null; // null নয়, undefined পাঠান
+// }
+
+
+
+
+if (parsedData.breeder) {
+  parsedData.breeder = parsedData.breeder.trim();
+  if (parsedData.breeder !== "") {
+    // Existing Breeder check
+    let existingBreeder = await Breeder.findOne({ breederName: parsedData.breeder });
+    if (existingBreeder) {
+      parsedData.breeder = existingBreeder._id; // ObjectId assign
+    } else {
+      // Create new Breeder
+      const newBreeder = await Breeder.create({
+        loftName: parsedData.breeder,
+        breederName: parsedData.breeder,
+        status: false,
+        experience: "none",
+        country: parsedData.country || "Unknown",
+      });
+      parsedData.breeder = newBreeder._id; // ObjectId assign
+    }
+  } else {
+    parsedData.breeder = null; // empty string -> null
   }
 } else {
-  console.log("Breeder exists:", parsedData.breeder);
-  parsedData.breeder = null; // null নয়, undefined পাঠান
+  parsedData.breeder = null; // undefined -> null
 }
+
+
+
 
 console.log("Parsed data before Pigeon.create:", parsedData);
   // Check if verified pigeon with same name OR ringNumber exists
@@ -353,16 +394,22 @@ console.log("Parsed data before Pigeon.create:", parsedData);
     verified: true,
   });
 
+// console.log("verifiedExist:", verifiedExist);
+
+
+
   if (verifiedExist) {
     // Loft create instead of pigeon
-    const loftData = {
-      loftName: parsedData.name,
-      breeder: parsedData.breeder,
-      country: parsedData.country || "Unknown",
-      status: false,
-    };
-    const loft = await Loft.create(loftData);
-    return { message: "Pigeon already verified, added to Loft instead.", loft };
+    // Check verified pigeon with same ringNumber
+const ringExist = await Pigeon.findOne({ ringNumber: parsedData.ringNumber, verified: true });
+if (ringExist) throw new ApiError(StatusCodes.CONFLICT, "Already exists: same ring number verified pigeon");
+console.log("ring number", ringExist);
+
+// Check verified pigeon with same name
+const nameExist = await Pigeon.findOne({ name: parsedData.name, verified: true });
+if (nameExist) throw new ApiError(StatusCodes.CONFLICT, "Already exists: same name verified pigeon");
+console.log("ring number", ringExist);
+
   }
 
   // Handle individual photos
@@ -1403,7 +1450,7 @@ const searchPigeonsByNameFromDB = async (query: string) => {
   const pigeons = await Pigeon.find({
     $and: [
       { status: { $ne: "Deleted" } },
-      { $or: [{ verified: true }, { iconic: true }] },
+      { $or: [{ verified: true }] },
       {
         $or: [
           { name: { $regex: query, $options: "i" } },
@@ -1411,15 +1458,16 @@ const searchPigeonsByNameFromDB = async (query: string) => {
         ]
       }
     ]
-  }).select("_id name ringNumber");
+  }).select("_id name ringNumber gender");
 
   return pigeons;
 };
+
 const searchAllPigeonsByNameFromDB = async (query: string) => {
   const pigeons = await Pigeon.find({
     $and: [
       { status: { $ne: "Deleted" } },
-      // { $or: [{ verified: true }, { iconic: true }] },
+      { $or: [{ verified: true }] },
       {
         $or: [
           { name: { $regex: query, $options: "i" } },
@@ -1427,7 +1475,7 @@ const searchAllPigeonsByNameFromDB = async (query: string) => {
         ]
       }
     ]
-  }).select("_id name ringNumber");
+  }).select("_id name ringNumber gender");
 
   return pigeons;
 };

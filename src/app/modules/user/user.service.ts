@@ -33,7 +33,17 @@ const createAdminToDB = async (payload: any): Promise<IUser> => {
 
 const createUserToDB = async (payload: Partial<IUser>): Promise<IUser> => {
 
+  // Capitalize each word of the user's name
+  if (payload.name) {
+    payload.name = payload.name
+      .split(" ")
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(" ");
+  }
+
+
     const createUser = await User.create(payload);
+    console.log("Created User:", createUser);
     if (!createUser) {
         throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to create user');
     }
