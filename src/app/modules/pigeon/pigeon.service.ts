@@ -402,12 +402,12 @@ console.log("Parsed data before Pigeon.create:", parsedData);
     // Loft create instead of pigeon
     // Check verified pigeon with same ringNumber
 const ringExist = await Pigeon.findOne({ ringNumber: parsedData.ringNumber, verified: true });
-if (ringExist) throw new ApiError(StatusCodes.CONFLICT, "Already exists: same ring number verified pigeon");
+if (ringExist) throw new ApiError(StatusCodes.CONFLICT, "This Ring Number belongs to a verified pigeon and cannot be used");
 console.log("ring number", ringExist);
 
 // Check verified pigeon with same name
 const nameExist = await Pigeon.findOne({ name: parsedData.name, verified: true });
-if (nameExist) throw new ApiError(StatusCodes.CONFLICT, "Already exists: same name verified pigeon");
+if (nameExist) throw new ApiError(StatusCodes.CONFLICT, "This name belongs to a verified pigeon and cannot be used");
 console.log("ring number", ringExist);
 
   }
