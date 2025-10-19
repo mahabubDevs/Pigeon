@@ -47,8 +47,8 @@ const pigeonSchema: Schema<IPigeon> = new Schema(
     },
     gender: {
       type: String,
-      enum: ["Cock", "Hen", "Unspecified"],
-      default: "Unspecified",
+      enum: ["Cock", "Hen", "Unspecified","N/A"],
+      default: "N/A",
     },
     status: {
       type: String,
