@@ -1213,11 +1213,14 @@ const getPigeonWithFamily = async (pigeonId: string, maxDepth = 5) => {
 
 const getSiblings = async (pigeonId: string) => {
   // ১. মূল পায়জান বের করা
-  const pigeon = await Pigeon.findById(pigeonId).lean();
+  const pigeon = await Pigeon.findById(pigeonId)
+    .populate("fatherRingId") // father object
+    .populate("motherRingId") // mother object
+    .lean();
   if (!pigeon) throw new ApiError(StatusCodes.NOT_FOUND, "Pigeon not found");
 
-  const fatherId = pigeon.fatherRingId?.toString();
-  const motherId = pigeon.motherRingId?.toString();
+  const fatherId = pigeon.fatherRingId?._id?.toString();
+  const motherId = pigeon.motherRingId?._id?.toString();
 
   // ২. Full siblings (একই বাবা & একই মা)
   let fullSiblings: any[] = [];
@@ -1227,14 +1230,17 @@ const getSiblings = async (pigeonId: string) => {
       fatherRingId: fatherId,
       motherRingId: motherId,
     })
+      .populate("fatherRingId")
+      .populate("motherRingId")
       .sort({ createdAt: -1 })
       .limit(5)
       .lean();
   }
 
-  // ৩. Half siblings (একই বাবা অথবা একই মা, কিন্তু দুইটা একসাথে নয়)
+  // ৩. Half siblings (same father or same mother)
   let halfSiblings: any[] = [];
-  const halfOrConditions = [];
+  const halfOrConditions: any[] = [];
+
   if (fatherId && motherId) {
     halfOrConditions.push(
       { fatherRingId: fatherId, motherRingId: { $ne: motherId } },
@@ -1251,15 +1257,30 @@ const getSiblings = async (pigeonId: string) => {
       _id: { $ne: pigeon._id },
       $or: halfOrConditions,
     })
+      .populate("fatherRingId")
+      .populate("motherRingId")
       .sort({ createdAt: -1 })
       .limit(5)
       .lean();
   }
 
-  // ৪. Type add করা
+  // ৪. Type assign করা
   const siblings = [
     ...fullSiblings.map((s) => ({ ...s, type: "Full Sibling" })),
-    ...halfSiblings.map((s) => ({ ...s, type: "Half Sibling" })),
+    ...halfSiblings.map((s) => {
+      let halfType = "Half Sibling";
+      console.log("Checking half sibling:", s.ringNumber);
+
+      if (fatherId && s.fatherRingId?._id?.toString() === fatherId) {
+        halfType = "Half Sibling (same father)";
+        console.log("Half Sibling (same father) found:", s.ringNumber);
+      } else if (motherId && s.motherRingId?._id?.toString() === motherId) {
+        halfType = "Half Sibling (same mother)";
+        console.log("Half Sibling (same mother) found:", s.ringNumber);
+      }
+
+      return { ...s, type: halfType };
+    }),
   ];
 
   return siblings;
