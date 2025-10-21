@@ -66,7 +66,7 @@ const getAllUsers = async (query: GetAllUsersQuery = {}): Promise<{
   };
 }> => {
   // 1️⃣ Fetch users
-  const builder = new QueryBuilder<IUser>(User.find({ role: { $ne: 'SUPER_ADMIN' } }), query)
+  const builder = new QueryBuilder<IUser>(User.find({ role: { $ne: 'SUPER_ADMIN' }, verified:true }), query)
     .search(['firstName', 'lastName', 'email', 'phoneNumber'])
     .filter()
     .sort()
