@@ -21,7 +21,6 @@ export const createPigeonZodSchema = z.object({
     z.number({ required_error: "Birth Year is required" })
       .int()
       .min(1900)
-      .max(new Date().getFullYear())
   ).optional(),
   shortInfo: z.string({ required_error: "Short Info is required" }).optional(),
   breeder: z.string().optional().nullable(),
