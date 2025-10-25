@@ -734,75 +734,68 @@ const updatePigeonToDB = async (
     if (parsedData[field] !== undefined) parsedData[field] = Number(parsedData[field]);
   });
 
-  // --- Father logic (auto-create if missing) ---
+  // --- Father/Mother auto-create logic ---
   if (parsedData.fatherRingId && parsedData.fatherRingId.trim() !== "") {
     let father = await Pigeon.findOne({ ringNumber: parsedData.fatherRingId });
     if (!father) {
-      father = await Pigeon.create({
-        ringNumber: parsedData.fatherRingId,
-        verified: false,
-        user: user._id,
-      });
+      father = await Pigeon.create({ ringNumber: parsedData.fatherRingId, verified: false, user: user._id });
     }
     parsedData.fatherRingId = father._id;
-  } else {
-    parsedData.fatherRingId = null;
-  }
+  } else parsedData.fatherRingId = null;
 
-  // --- Mother logic (auto-create if missing) ---
   if (parsedData.motherRingId && parsedData.motherRingId.trim() !== "") {
     let mother = await Pigeon.findOne({ ringNumber: parsedData.motherRingId });
     if (!mother) {
-      mother = await Pigeon.create({
-        ringNumber: parsedData.motherRingId,
-        verified: false,
-        user: user._id,
-      });
+      mother = await Pigeon.create({ ringNumber: parsedData.motherRingId, verified: false, user: user._id });
     }
     parsedData.motherRingId = mother._id;
-  } else {
-    parsedData.motherRingId = null;
+  } else parsedData.motherRingId = null;
+
+  // --- Breeder logic (auto-create if not exists) ---
+  if (parsedData.breeder) {
+    parsedData.breeder = parsedData.breeder.trim();
+    if (parsedData.breeder !== "") {
+      let existingBreeder = await Breeder.findOne({ breederName: parsedData.breeder });
+      if (existingBreeder) {
+        parsedData.breeder = existingBreeder._id;
+      } else {
+        const newBreeder = await Breeder.create({
+          loftName: parsedData.breeder,
+          breederName: parsedData.breeder,
+          status: false,
+          experience: "none",
+          country: parsedData.country || "Unknown",
+        });
+        parsedData.breeder = newBreeder._id;
+      }
+    } else parsedData.breeder = null;
+  } else parsedData.breeder = null;
+
+  // --- Verified pigeon conflict check ---
+  const verifiedExist = await Pigeon.findOne({
+    $or: [{ ringNumber: parsedData.ringNumber }, { name: parsedData.name }],
+    verified: true,
+    _id: { $ne: pigeonId }, // exclude current pigeon
+  });
+
+  if (verifiedExist) {
+    if (verifiedExist.ringNumber === parsedData.ringNumber)
+      throw new ApiError(StatusCodes.CONFLICT, "This Ring Number belongs to a verified pigeon and cannot be used");
+    if (verifiedExist.name === parsedData.name)
+      throw new ApiError(StatusCodes.CONFLICT, "This name belongs to a verified pigeon and cannot be used");
   }
 
-  // --- Breeder logic (same as create) ---
-  if (parsedData.breeder && parsedData.breeder.trim() !== "") {
-    let existingBreeder = await Breeder.findOne({ breederName: parsedData.breeder });
-    if (existingBreeder) parsedData.breeder = existingBreeder._id;
-    else {
-      const newBreeder = await Breeder.create({
-        loftName: parsedData.breeder,
-        breederName: parsedData.breeder,
-        status: false,
-        experience: "none",
-        country: parsedData.country || "Unknown",
-      });
-      parsedData.breeder = newBreeder._id;
-    }
-  } else {
-    parsedData.breeder = null;
-  }
-
-  // --- Individual photos (overwrite if new uploaded) ---
+  // --- Handle individual photos ---
   const photoFields = ["pigeonPhoto", "eyePhoto", "ownershipPhoto", "pedigreePhoto", "DNAPhoto"];
   photoFields.forEach(field => {
-    if (files && files[field] && files[field][0]) {
-      parsedData[field] = `/images/${files[field][0].filename}`;
-    }
+    if (files && files[field] && files[field][0]) parsedData[field] = `/images/${files[field][0].filename}`;
   });
 
   // --- Extra photos ---
   let updatedPhotos: string[] = pigeon.photos || [];
   const remainingPhotos: string[] = parsedData.remaining || [];
-
-  if (remainingPhotos.length > 0) {
-    updatedPhotos = updatedPhotos.filter(photo => remainingPhotos.includes(photo));
-  }
-
-  if (files && files.photos) {
-    const newPhotos = files.photos.map((file: Express.Multer.File) => `/images/${file.filename}`);
-    updatedPhotos.push(...newPhotos);
-  }
-
+  if (remainingPhotos.length > 0) updatedPhotos = updatedPhotos.filter(photo => remainingPhotos.includes(photo));
+  if (files && files.photos) updatedPhotos.push(...files.photos.map((file: Express.Multer.File) => `/images/${file.filename}`));
   parsedData.photos = Array.from(new Set(updatedPhotos));
 
   // --- Optional results ---
@@ -817,10 +810,7 @@ const updatePigeonToDB = async (
   }
 
   // --- Merge existing pigeon with new data ---
-  const payload: Partial<IPigeon> = {
-    ...pigeon.toObject(),
-    ...parsedData,
-  };
+  const payload: Partial<IPigeon> = { ...pigeon.toObject(), ...parsedData };
 
   // --- Update database ---
   const updatedPigeon = await Pigeon.findByIdAndUpdate(pigeonId, payload, { new: true });
@@ -1082,29 +1072,32 @@ const getMyAllPigeonDetailsFromDB = async (
   const page = parseInt(query.page as string) || 1;
   const limit = parseInt(query.limit as string) || 10;
 
-  // Step 1: User own pigeons
+  // Step 1: Base query for user's own pigeons
   const baseQuery = Pigeon.find({
     user: userId,
     status: { $ne: "Deleted" },
     name: { $exists: true, $ne: "" },
   });
 
+  // --- Numeric filters ---
+  if (query.birthYear) {
+    const year = Number(query.birthYear);
+    if (!isNaN(year)) baseQuery.where("birthYear").equals(year);
+  }
+
+  // --- String/Regex filters ---
+  if (query.gender) baseQuery.where("gender").equals(new RegExp(`^${query.gender}$`, "i"));
+  if (query.status) baseQuery.where("status").equals(new RegExp(`^${query.status}$`, "i"));
+  if (query.catagory) baseQuery.where("catagory").equals(new RegExp(`^${query.catagory}$`, "i"));
+
+  // --- Breeder filter (relational) ---
+  if (query.breeder) {
+    const breederDoc = await Breeder.findOne({ breederName: new RegExp(`^${query.breeder}$`, "i") });
+    if (breederDoc) baseQuery.where("breeder").equals(breederDoc._id);
+  }
+
   const qb = new QueryBuilder<IPigeon>(baseQuery, query);
   qb.search(["ringNumber", "name", "country"]).filter();
-
-  // 🟢 Mongoose-level dynamic filters
-  if (query.status) {
-    qb.modelQuery = qb.modelQuery.where({ status: new RegExp(query.status, "i") });
-  }
-  if (query.gender) {
-    qb.modelQuery = qb.modelQuery.where({ gender: new RegExp(query.gender, "i") });
-  }
-  if (query.breeder) {
-    qb.modelQuery = qb.modelQuery.where({ breeder: query.breeder });
-  }
-  if (query.country) {
-    qb.modelQuery = qb.modelQuery.where({ country: new RegExp(query.country, "i") });
-  }
 
   qb.sort()
     .fields()
@@ -1116,6 +1109,7 @@ const getMyAllPigeonDetailsFromDB = async (
     });
 
   console.log("🧩 Final Mongoose Filter:", qb.modelQuery.getFilter());
+
   const ownPigeons = await qb.modelQuery.lean();
 
   // Step 2: UserLoft pigeons
@@ -1131,22 +1125,27 @@ const getMyAllPigeonDetailsFromDB = async (
     })
     .lean();
 
-  // Step 2a: Apply same dynamic filters manually for loft pigeons
-  const loftPigeons = userLoftDocs
+  // Apply same filters to loft pigeons manually
+  let loftPigeons = userLoftDocs
     .filter(doc => doc.pigeon)
     .map(doc => ({
       ...(doc.pigeon as any),
       loftInfo: { addedAt: doc.addedAt },
-    }))
-    .filter(p => {
-      if (query.status && !p.status?.toLowerCase().includes(query.status.toLowerCase())) return false;
-      if (query.gender && !p.gender?.toLowerCase().includes(query.gender.toLowerCase())) return false;
-      if (query.country && !p.country?.toLowerCase().includes(query.country.toLowerCase())) return false;
-      if (query.breeder && p.breeder?._id.toString() !== query.breeder) return false;
-      return true;
-    });
+    }));
 
-  // Step 3: Combine both
+  if (query.birthYear) {
+    const year = Number(query.birthYear);
+    if (!isNaN(year)) loftPigeons = loftPigeons.filter(p => p.birthYear === year);
+  }
+  if (query.gender) loftPigeons = loftPigeons.filter(p => p.gender?.toLowerCase() === query.gender.toLowerCase());
+  if (query.status) loftPigeons = loftPigeons.filter(p => p.status?.toLowerCase() === query.status.toLowerCase());
+  if (query.catagory) loftPigeons = loftPigeons.filter(p => p.catagory?.toLowerCase() === query.catagory.toLowerCase());
+  if (query.breeder) {
+    const breederDoc = await Breeder.findOne({ breederName: new RegExp(`^${query.breeder}$`, "i") });
+    if (breederDoc) loftPigeons = loftPigeons.filter(p => p.breeder?.toString() === breederDoc._id.toString());
+  }
+
+  // Step 3: Combine both own + loft pigeons
   let allPigeons: any[] = [...ownPigeons, ...loftPigeons];
 
   // Step 4: Manual search (ringNumber, name, country)

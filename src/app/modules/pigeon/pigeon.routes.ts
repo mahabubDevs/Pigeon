@@ -83,7 +83,7 @@ router
   // Loft এ pigeon add করার জন্য
 router.post(
   "/add",
-  auth(USER_ROLES.USER, USER_ROLES.PAIDUSER, USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN),
+  auth(USER_ROLES.PAIDUSER, USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN),
   PigeonController.addToLoft
 );
 
