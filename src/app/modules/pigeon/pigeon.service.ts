@@ -976,23 +976,134 @@ const getPigeonDetailsFromDB = async (id: string): Promise<IPigeon | null> => {
   return result;
 };
 
+// const getMyAllPigeonDetailsFromDB = async (
+//   userId: string,
+//   query: any
+// ): Promise<{ data: any[]; pagination: any }> => {
+
+//     console.log("🟢 Function called for user:", userId);
+//   console.log("📥 Raw Query Params:", query);
+//   const page = parseInt(query.page as string) || 1;
+//   const limit = parseInt(query.limit as string) || 10;
+
+
+
+ 
+//   // Step 1: User own pigeons
+//   const baseQuery = Pigeon.find({ user: userId, status: { $ne: "Deleted" } ,name: { $exists: true, $ne: "" } });
+//   const qb = new QueryBuilder<IPigeon>(baseQuery, query);
+
+//   qb.search(["ringNumber", "name", "country"]).filter();
+
+//   if (query.status) {
+//     qb.modelQuery = qb.modelQuery.where({
+//       status: new RegExp(`^${query.status}$`, "i"),
+//     });
+//   }
+
+//   qb.sort()
+//     .fields()
+//     .populate(["user", "fatherRingId", "motherRingId", "breeder"], {
+//       user: "name email",
+//       fatherRingId: "ringNumber name",
+//       motherRingId: "ringNumber name",
+//       breeder: "breederName",
+//     });
+
+//      console.log("🧩 Final Mongoose Filter:", qb.modelQuery.getFilter());
+
+//   const ownPigeons = await qb.modelQuery.lean();
+
+//   // Step 2: UserLoft pigeons
+//   const userLoftDocs = await UserLoft.find({ user: userId })
+//     .populate({
+//       path: "pigeon",
+//       populate: [
+//         { path: "user", select: "name email" },
+//         { path: "fatherRingId", select: "ringNumber name" },
+//         { path: "motherRingId", select: "ringNumber name" },
+//         { path: "breeder", select: "breederName" },
+//       ],
+//     })
+    
+
+//   const loftPigeons = userLoftDocs
+//     .filter(doc => doc.pigeon)
+//     .map(doc => ({
+//       ...(doc.pigeon as any),
+//       loftInfo: { addedAt: doc.addedAt },
+//     }));
+
+//   // Step 3: Combine both
+//   let allPigeons: any[] = [...ownPigeons, ...loftPigeons];
+
+//   // Step 4: Manual search
+//   if (query.search) {
+//     const search = query.search.toLowerCase();
+//     allPigeons = allPigeons.filter(p =>
+//       ["ringNumber", "name", "country"].some(key =>
+//         (p as any)[key]?.toString().toLowerCase().includes(search)
+//       )
+//     );
+//   }
+
+//   // Step 5: Manual sort
+//   if (query.sortBy && query.order) {
+//     allPigeons.sort((a, b) => {
+//       const fieldA = (a as any)[query.sortBy];
+//       const fieldB = (b as any)[query.sortBy];
+//       if (!fieldA || !fieldB) return 0;
+//       if (query.order === "asc") return fieldA > fieldB ? 1 : -1;
+//       return fieldA < fieldB ? 1 : -1;
+//     });
+//   }
+
+//   // Step 6: Pagination
+//   const total = allPigeons.length;
+//   const totalPage = Math.ceil(total / limit);
+//   const start = (page - 1) * limit;
+//   const end = start + limit;
+//   const paginatedData = allPigeons.slice(start, end);
+
+//   const pagination = { total, limit, page, totalPage };
+
+//   return { pagination, data: paginatedData };
+// };
+
+
 const getMyAllPigeonDetailsFromDB = async (
   userId: string,
   query: any
 ): Promise<{ data: any[]; pagination: any }> => {
+
+  console.log("🟢 Function called for user:", userId);
+  console.log("📥 Raw Query Params:", query);
+
   const page = parseInt(query.page as string) || 1;
   const limit = parseInt(query.limit as string) || 10;
 
   // Step 1: User own pigeons
-  const baseQuery = Pigeon.find({ user: userId, status: { $ne: "Deleted" } ,name: { $exists: true, $ne: "" } });
-  const qb = new QueryBuilder<IPigeon>(baseQuery, query);
+  const baseQuery = Pigeon.find({
+    user: userId,
+    status: { $ne: "Deleted" },
+    name: { $exists: true, $ne: "" },
+  });
 
+  const qb = new QueryBuilder<IPigeon>(baseQuery, query);
   qb.search(["ringNumber", "name", "country"]).filter();
 
+  // 🟢 Mongoose-level dynamic filters
   if (query.status) {
-    qb.modelQuery = qb.modelQuery.where({
-      status: new RegExp(`^${query.status}$`, "i"),
-    });
+    qb.modelQuery = qb.modelQuery.where({ status: new RegExp(query.status, "i") });
+  }
+  if (query.gender) {
+    qb.modelQuery = qb.modelQuery.where({ gender: new RegExp(query.gender, "i") });
+  }
+  if (query.breeder) {
+    qb.modelQuery = qb.modelQuery.where({ breeder: query.breeder });
+  }
+  if (query.country) {
+    qb.modelQuery = qb.modelQuery.where({ country: new RegExp(query.country, "i") });
   }
 
   qb.sort()
@@ -1004,6 +1115,7 @@ const getMyAllPigeonDetailsFromDB = async (
       breeder: "breederName",
     });
 
+  console.log("🧩 Final Mongoose Filter:", qb.modelQuery.getFilter());
   const ownPigeons = await qb.modelQuery.lean();
 
   // Step 2: UserLoft pigeons
@@ -1019,17 +1131,25 @@ const getMyAllPigeonDetailsFromDB = async (
     })
     .lean();
 
+  // Step 2a: Apply same dynamic filters manually for loft pigeons
   const loftPigeons = userLoftDocs
     .filter(doc => doc.pigeon)
     .map(doc => ({
       ...(doc.pigeon as any),
       loftInfo: { addedAt: doc.addedAt },
-    }));
+    }))
+    .filter(p => {
+      if (query.status && !p.status?.toLowerCase().includes(query.status.toLowerCase())) return false;
+      if (query.gender && !p.gender?.toLowerCase().includes(query.gender.toLowerCase())) return false;
+      if (query.country && !p.country?.toLowerCase().includes(query.country.toLowerCase())) return false;
+      if (query.breeder && p.breeder?._id.toString() !== query.breeder) return false;
+      return true;
+    });
 
   // Step 3: Combine both
   let allPigeons: any[] = [...ownPigeons, ...loftPigeons];
 
-  // Step 4: Manual search
+  // Step 4: Manual search (ringNumber, name, country)
   if (query.search) {
     const search = query.search.toLowerCase();
     allPigeons = allPigeons.filter(p =>
