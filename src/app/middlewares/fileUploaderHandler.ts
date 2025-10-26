@@ -48,6 +48,7 @@ const storage = multer.diskStorage({
   const fileFilter = (req: Request, file: any, cb: FileFilterCallback) => {
     const imageFields = ['pigeonPhoto', 'eyePhoto', 'ownershipPhoto', 'pedigreePhoto', 'DNAPhoto','image'];
 
+
     if (imageFields.includes(file.fieldname)) {
       if (
         file.mimetype === 'image/jpeg' ||
@@ -83,6 +84,8 @@ const storage = multer.diskStorage({
     { name: 'image', maxCount: 1 },
     { name: 'excel', maxCount: 1 },
   ]);
+
+// console.log("File upload handler initialized.",upload);
 
   return upload;
 };

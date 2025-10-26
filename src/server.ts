@@ -44,7 +44,7 @@ async function main() {
     socketHelper.socket(io);
     //@ts-ignore
 
-    // subscriptionExpiryCron();
+    subscriptionExpiryCron();
 
   (global as any).io = io;
 

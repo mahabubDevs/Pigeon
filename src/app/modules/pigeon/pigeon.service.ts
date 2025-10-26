@@ -310,21 +310,50 @@ if (parsedData.breeder) parsedData.breeder = parsedData.breeder.trim();
   }
 
   // Father/Mother ring logic
-  if (parsedData.fatherRingId && parsedData.fatherRingId.trim() !== "") {
-    let father = await Pigeon.findOne({ ringNumber: parsedData.fatherRingId });
-    if (!father) {
-      father = await Pigeon.create({ ringNumber: parsedData.fatherRingId, verified: false, user: user._id });
+// Father ring logic with gender check
+if (parsedData.fatherRingId && parsedData.fatherRingId.trim() !== "") {
+  let father = await Pigeon.findOne({ ringNumber: parsedData.fatherRingId });
+  console.log("Father pigeon found:", father);
+  if (father) {
+    // যদি পিজন DB-তে থাকে, তার gender check করা
+    if (father.gender?.toLowerCase() !== "cock") {
+      throw new ApiError(
+        StatusCodes.BAD_REQUEST,
+        "Father pigeon must be a cock. The provided ring number belongs to a hen."
+      );
     }
-    parsedData.fatherRingId = father._id;
-  } else parsedData.fatherRingId = null;
+  } else {
+    // DB-তে না থাকলে নতুন পিজন create করা
+    father = await Pigeon.create({ ringNumber: parsedData.fatherRingId, verified: false, user: user._id });
+  }
+  console.log("mahah", father);
 
-  if (parsedData.motherRingId && parsedData.motherRingId.trim() !== "") {
-    let mother = await Pigeon.findOne({ ringNumber: parsedData.motherRingId });
-    if (!mother) {
-      mother = await Pigeon.create({ ringNumber: parsedData.motherRingId, verified: false, user: user._id });
+  parsedData.fatherRingId = father._id;
+} else {
+  parsedData.fatherRingId = null;
+}
+
+
+if (parsedData.motherRingId && parsedData.motherRingId.trim() !== "") {
+  let mother = await Pigeon.findOne({ ringNumber: parsedData.motherRingId });
+
+  if (mother) {
+    // যদি পিজন DB-তে থাকে, তার gender check করা
+    if (mother.gender?.toLowerCase() !== "hen") {
+      throw new ApiError(
+        StatusCodes.BAD_REQUEST,
+        "Mother pigeon must be a hen. The provided ring number belongs to a cock."
+      );
     }
-    parsedData.motherRingId = mother._id;
-  } else parsedData.motherRingId = null;
+  } else {
+    // DB-তে না থাকলে নতুন পিজন create করা
+    mother = await Pigeon.create({ ringNumber: parsedData.motherRingId, verified: false, user: user._id });
+  }
+
+  parsedData.motherRingId = mother._id;
+} else {
+  parsedData.motherRingId = null;
+}
 
 
 
@@ -1061,115 +1090,93 @@ const getPigeonDetailsFromDB = async (id: string): Promise<IPigeon | null> => {
 // };
 
 
+
 const getMyAllPigeonDetailsFromDB = async (
   userId: string,
   query: any
 ): Promise<{ data: any[]; pagination: any }> => {
-
-  console.log("🟢 Function called for user:", userId);
-  console.log("📥 Raw Query Params:", query);
-
+ 
+  console.log("Status filter applied:", query.status);
   const page = parseInt(query.page as string) || 1;
   const limit = parseInt(query.limit as string) || 10;
 
-  // Step 1: Base query for user's own pigeons
+  // --- Step 1: Own pigeons query ---
   const baseQuery = Pigeon.find({
     user: userId,
     status: { $ne: "Deleted" },
     name: { $exists: true, $ne: "" },
   });
 
-  // --- Numeric filters ---
-  if (query.birthYear) {
-    const year = Number(query.birthYear);
-    if (!isNaN(year)) baseQuery.where("birthYear").equals(year);
-  }
+  if (query.birthYear) baseQuery.where("birthYear").equals(Number(query.birthYear));
+  if (query.gender) baseQuery.where("gender").equals(new RegExp(`^${query.gender.toString().trim()}$`, "i"));
+  if (query.country) baseQuery.where("country").equals(new RegExp(`^${query.country.toString().trim()}$`, "i"));
+  if (query.status) baseQuery.where("status").equals(new RegExp(`^${query.status.toString().trim()}$`, "i"));
 
-  // --- String/Regex filters ---
-  if (query.gender) baseQuery.where("gender").equals(new RegExp(`^${query.gender}$`, "i"));
-  if (query.status) baseQuery.where("status").equals(new RegExp(`^${query.status}$`, "i"));
-  if (query.catagory) baseQuery.where("catagory").equals(new RegExp(`^${query.catagory}$`, "i"));
+  
 
-  // --- Breeder filter (relational) ---
+  if (query.catagory) baseQuery.where("catagory").equals(new RegExp(`^${query.catagory.toString().trim()}$`, "i"));
   if (query.breeder) {
-    const breederDoc = await Breeder.findOne({ breederName: new RegExp(`^${query.breeder}$`, "i") });
+    const breederDoc = await Breeder.findOne({ breederName: new RegExp(`^${query.breeder.toString().trim()}$`, "i") });
     if (breederDoc) baseQuery.where("breeder").equals(breederDoc._id);
   }
 
-  const qb = new QueryBuilder<IPigeon>(baseQuery, query);
-  qb.search(["ringNumber", "name", "country"]).filter();
-
-  qb.sort()
-    .fields()
-    .populate(["user", "fatherRingId", "motherRingId", "breeder"], {
+  const qbOwn = new QueryBuilder<IPigeon>(baseQuery, query);
+  qbOwn.search(["ringNumber", "name", "country"]).filter().sort().fields().populate(
+    ["user", "fatherRingId", "motherRingId", "breeder"],
+    {
       user: "name email",
       fatherRingId: "ringNumber name",
       motherRingId: "ringNumber name",
       breeder: "breederName",
-    });
+    }
+  );
 
-  console.log("🧩 Final Mongoose Filter:", qb.modelQuery.getFilter());
+  const ownPigeons = await qbOwn.modelQuery;
 
-  const ownPigeons = await qb.modelQuery.lean();
+  // --- Step 2: UserLoft pigeons query ---
+  const loftPigeonIds = await UserLoft.find({ user: userId }).distinct("pigeon");
 
-  // Step 2: UserLoft pigeons
-  const userLoftDocs = await UserLoft.find({ user: userId })
-    .populate({
-      path: "pigeon",
-      populate: [
-        { path: "user", select: "name email" },
-        { path: "fatherRingId", select: "ringNumber name" },
-        { path: "motherRingId", select: "ringNumber name" },
-        { path: "breeder", select: "breederName" },
-      ],
-    })
+  const loftQuery = Pigeon.find({ _id: { $in: loftPigeonIds }, status: { $ne: "Deleted" } });
+
+  if (query.birthYear) loftQuery.where("birthYear").equals(Number(query.birthYear));
+  if (query.gender) loftQuery.where("gender").equals(new RegExp(`^${query.gender.toString().trim()}$`, "i"));
+  if (query.country) loftQuery.where("country").equals(new RegExp(`^${query.country.toString().trim()}$`, "i"));
+  
+  if (query.status) loftQuery.where("status").equals(new RegExp(`^${query.status.toString().trim()}$`, "i"));
+  if (query.catagory) loftQuery.where("catagory").equals(new RegExp(`^${query.catagory.toString().trim()}$`, "i"));
+  if (query.breeder) {
+    const breederDoc = await Breeder.findOne({ breederName: new RegExp(`^${query.breeder.toString().trim()}$`, "i") });
+    if (breederDoc) loftQuery.where("breeder").equals(breederDoc._id);
+  }
+
+  const qbLoft = new QueryBuilder<IPigeon>(loftQuery, query);
+  qbLoft.search(["ringNumber", "name", "country"]).filter().sort().fields().populate(
+    ["user", "fatherRingId", "motherRingId", "breeder"],
+    {
+      user: "name email",
+      fatherRingId: "ringNumber name",
+      motherRingId: "ringNumber name",
+      breeder: "breederName",
+    }
+  );
+
+  let loftPigeons = await qbLoft.modelQuery;
+
+  // --- Attach loft info (addedAt) ---
+  const loftMap = await UserLoft.find({ user: userId, pigeon: { $in: loftPigeonIds } })
+    .select("pigeon addedAt")
     .lean();
 
-  // Apply same filters to loft pigeons manually
-  let loftPigeons = userLoftDocs
-    .filter(doc => doc.pigeon)
-    .map(doc => ({
-      ...(doc.pigeon as any),
-      loftInfo: { addedAt: doc.addedAt },
-    }));
+  loftPigeons = loftPigeons.map(p => {
+    const loftInfo = loftMap.find(l => l.pigeon.toString() === p._id.toString());
+    const plainPigeon = JSON.parse(JSON.stringify(p));
+    return { ...plainPigeon, loftInfo: loftInfo ? { addedAt: loftInfo.addedAt } : undefined };
+  });
 
-  if (query.birthYear) {
-    const year = Number(query.birthYear);
-    if (!isNaN(year)) loftPigeons = loftPigeons.filter(p => p.birthYear === year);
-  }
-  if (query.gender) loftPigeons = loftPigeons.filter(p => p.gender?.toLowerCase() === query.gender.toLowerCase());
-  if (query.status) loftPigeons = loftPigeons.filter(p => p.status?.toLowerCase() === query.status.toLowerCase());
-  if (query.catagory) loftPigeons = loftPigeons.filter(p => p.catagory?.toLowerCase() === query.catagory.toLowerCase());
-  if (query.breeder) {
-    const breederDoc = await Breeder.findOne({ breederName: new RegExp(`^${query.breeder}$`, "i") });
-    if (breederDoc) loftPigeons = loftPigeons.filter(p => p.breeder?.toString() === breederDoc._id.toString());
-  }
-
-  // Step 3: Combine both own + loft pigeons
+  // --- Step 3: Combine own + loft pigeons ---
   let allPigeons: any[] = [...ownPigeons, ...loftPigeons];
 
-  // Step 4: Manual search (ringNumber, name, country)
-  if (query.search) {
-    const search = query.search.toLowerCase();
-    allPigeons = allPigeons.filter(p =>
-      ["ringNumber", "name", "country"].some(key =>
-        (p as any)[key]?.toString().toLowerCase().includes(search)
-      )
-    );
-  }
-
-  // Step 5: Manual sort
-  if (query.sortBy && query.order) {
-    allPigeons.sort((a, b) => {
-      const fieldA = (a as any)[query.sortBy];
-      const fieldB = (b as any)[query.sortBy];
-      if (!fieldA || !fieldB) return 0;
-      if (query.order === "asc") return fieldA > fieldB ? 1 : -1;
-      return fieldA < fieldB ? 1 : -1;
-    });
-  }
-
-  // Step 6: Pagination
+  // --- Step 4: Manual pagination ---
   const total = allPigeons.length;
   const totalPage = Math.ceil(total / limit);
   const start = (page - 1) * limit;
@@ -1179,7 +1186,11 @@ const getMyAllPigeonDetailsFromDB = async (
   const pagination = { total, limit, page, totalPage };
 
   return { pagination, data: paginatedData };
-};
+};   
+
+
+
+
 
 
 

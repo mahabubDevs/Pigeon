@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 
 export interface IPigeon {
+    _id: string;
   user: mongoose.Types.ObjectId; // which user added this pigeon
   ringNumber: string;
   name?: string;

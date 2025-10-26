@@ -29,12 +29,17 @@ const createPigeon = catchAsync(async (req: Request, res: Response) => {
 
 const updatePigeon = catchAsync(async (req: Request, res: Response) => {
   const pigeonId = req.params.id;
-
+  console.log("Pigeon ID to update:", pigeonId);
+    console.log("Files received:", req.files);
   // Parse deletedIndexes from body
   const deletedIndexes: number[] = req.body.deletedIndexes || [];
 
   // Pass data directly (req.body can contain all fields to update)
   const data = req.body.data || req.body; // fallback to req.body if no data field
+
+  console.log("Updating Pigeon ID:", data);
+
+
 
   const result = await PigeonService.updatePigeonToDB(
     pigeonId,
@@ -42,6 +47,7 @@ const updatePigeon = catchAsync(async (req: Request, res: Response) => {
     req.files,
     req.user
   );
+  // console.log("Update Result:", result);
 
   sendResponse(res, {
     statusCode: 200,
