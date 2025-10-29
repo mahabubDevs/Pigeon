@@ -56,6 +56,38 @@ export const BreederService = {
   return { pagination, breeder };
 },
 
+  getVerifyAllBreeders: async (
+  query: getAllBreeders = {}
+): Promise<{
+  breeder: IBreeder[];
+  pagination: {
+    total: number;
+    limit: number;
+    page: number;
+    totalPage: number;
+  };
+}> => {
+  // Step 1: Define searchable fields (যেখানে search করতে চাও)
+  const searchableFields = ["email", "breederName", "country","loftName"]; // example fields
+
+  // Step 2: Define filterable fields (extra fields besides search)
+  // যেগুলো cleanObject এ filter হবে automatically
+
+  // Step 3: Build the query
+  const builder = new QueryBuilder<IBreeder>(Breeder.find({ status: true }), query)
+    .search(searchableFields) // searchable fields দিতে হবে খালি নয়
+    .filter()
+    .sort()
+    .paginate()
+    .fields();
+
+  // Step 4: Execute query
+  const breeder = await builder.modelQuery;
+  const pagination = await builder.getPaginationInfo();
+
+  return { pagination, breeder };
+},
+
 
   getBreederById: async (id: string): Promise<IBreeder | null> => {
     return Breeder.findById(id).lean();

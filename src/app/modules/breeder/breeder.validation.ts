@@ -9,7 +9,7 @@ const createBreederZodSchema = z.object({
     
   breederName: z
     .string({ required_error: "Breeder Name is required" })
-    .min(2, "Breeder Name must be at least 2 characters"),
+    .min(2, "Breeder Name must be at least 2 characters").optional(),
     
   country: z
     .string({ required_error: "Country is required" })

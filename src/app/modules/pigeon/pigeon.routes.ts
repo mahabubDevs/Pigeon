@@ -45,6 +45,9 @@ router
 router
   .route("/searchAll")
   .get(PigeonController.searchAllPigeonsByName);
+router
+  .route("/searchAllName")
+  .get(PigeonController.searchAllName);
  router
   .route('/myAllpigeons')
   // .get( authWithPageAccess('pigeon'), PigeonController.getMyAllPigeons);

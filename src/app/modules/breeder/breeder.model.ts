@@ -4,7 +4,7 @@ import { IBreeder } from "./breeder.interface";
 
 const breederSchema = new Schema({
   loftName: { type: String, required: true },
-  breederName: { type: String, required: true },
+  breederName: { type: String, required: false },
   country: { type: String },
   email: { type: String, required: false },
   phone: { type: String },

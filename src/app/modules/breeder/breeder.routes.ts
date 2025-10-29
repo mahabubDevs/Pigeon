@@ -15,6 +15,10 @@ router
    BreederController.createBreeder
   )
   .get(auth(USER_ROLES.USER, USER_ROLES.PAIDUSER, USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN), BreederController.getAllBreeders);
+router
+  .route("/verify")
+ 
+  .get(auth(USER_ROLES.USER, USER_ROLES.PAIDUSER, USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN), BreederController.getVerifyAllBreeders);
 
 router
   .route("/:id")

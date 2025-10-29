@@ -396,7 +396,7 @@ if (parsedData.breeder) {
       // Create new Breeder
       const newBreeder = await Breeder.create({
         loftName: parsedData.breeder,
-        breederName: parsedData.breeder,
+        // breederName: parsedData.breeder,
         status: false,
         experience: "none",
         country: parsedData.country || "Unknown",
@@ -430,14 +430,14 @@ console.log("Parsed data before Pigeon.create:", parsedData);
   if (verifiedExist) {
     // Loft create instead of pigeon
     // Check verified pigeon with same ringNumber
-const ringExist = await Pigeon.findOne({ ringNumber: parsedData.ringNumber, verified: true });
-if (ringExist) throw new ApiError(StatusCodes.CONFLICT, "This Ring Number belongs to a verified pigeon and cannot be used");
-console.log("ring number", ringExist);
+// const ringExist = await Pigeon.findOne({ ringNumber: parsedData.ringNumber, verified: true });
+// if (ringExist) throw new ApiError(StatusCodes.CONFLICT, "This Ring Number belongs to a verified pigeon and cannot be used");
+// console.log("ring number", ringExist);
 
 // Check verified pigeon with same name
 const nameExist = await Pigeon.findOne({ name: parsedData.name, verified: true });
 if (nameExist) throw new ApiError(StatusCodes.CONFLICT, "This name belongs to a verified pigeon and cannot be used");
-console.log("ring number", ringExist);
+// console.log("ring number", ringExist);
 
   }
 
@@ -464,6 +464,28 @@ console.log("ring number", ringExist);
       parsedData.results = [];
     }
   }
+
+
+
+
+  // 🔍 Duplicate check: same ringNumber + country + birthYear
+  if (parsedData.ringNumber && parsedData.country && parsedData.birthYear) {
+    const duplicatePigeon = await Pigeon.findOne({
+      ringNumber: parsedData.ringNumber,
+      country: parsedData.country,
+      birthYear: parsedData.birthYear,
+    });
+
+    if (duplicatePigeon) {
+      throw new ApiError(
+        StatusCodes.CONFLICT,
+        "This pigeon is already registered in our database. To add it to your loft database, go to the Pigeon Database and press the “+” button."
+      );
+    }
+  }
+
+
+
 
   // Save pigeon
   parsedData.user = user._id;
@@ -790,7 +812,7 @@ const updatePigeonToDB = async (
       } else {
         const newBreeder = await Breeder.create({
           loftName: parsedData.breeder,
-          breederName: parsedData.breeder,
+          // breederName: parsedData.breeder,
           status: false,
           experience: "none",
           country: parsedData.country || "Unknown",
@@ -808,11 +830,38 @@ const updatePigeonToDB = async (
   });
 
   if (verifiedExist) {
-    if (verifiedExist.ringNumber === parsedData.ringNumber)
-      throw new ApiError(StatusCodes.CONFLICT, "This Ring Number belongs to a verified pigeon and cannot be used");
+    // if (verifiedExist.ringNumber === parsedData.ringNumber)
+    //   throw new ApiError(StatusCodes.CONFLICT, "This Ring Number belongs to a verified pigeon and cannot be used");
     if (verifiedExist.name === parsedData.name)
       throw new ApiError(StatusCodes.CONFLICT, "This name belongs to a verified pigeon and cannot be used");
   }
+
+
+// 🔍 Duplicate check: same ringNumber + country + birthYear
+if (parsedData.ringNumber && parsedData.country && parsedData.birthYear) {
+  const originalCombinationUnchanged =
+    pigeon.ringNumber === parsedData.ringNumber &&
+    pigeon.country === parsedData.country &&
+    pigeon.birthYear === parsedData.birthYear;
+
+  if (!originalCombinationUnchanged) {
+    // শুধু তখনই check করো যদি combination পরিবর্তন হয়ে থাকে
+    const duplicatePigeon = await Pigeon.findOne({
+      ringNumber: parsedData.ringNumber,
+      country: parsedData.country,
+      birthYear: parsedData.birthYear,
+      _id: { $ne: pigeonId }, // exclude current pigeon
+    });
+
+    if (duplicatePigeon) {
+      throw new ApiError(
+        StatusCodes.CONFLICT,
+        "This pigeon is already registered in our database. To add it to your loft database, go to the Pigeon Database and press the “+” button."
+      );
+    }
+  }
+}
+
 
   // --- Handle individual photos ---
   const photoFields = ["pigeonPhoto", "eyePhoto", "ownershipPhoto", "pedigreePhoto", "DNAPhoto"];
@@ -983,10 +1032,24 @@ const getPigeonDetailsFromDB = async (id: string): Promise<IPigeon | null> => {
 
   const result = await Pigeon.findById(id)
     .populate("user")
-    .populate("fatherRingId")
-    .populate("motherRingId")
-    .populate("breeder")
-    ;
+  .populate({
+    path: "fatherRingId",
+    populate: {
+      path: "breeder",
+      select: "loftName breederName status country experience" // যেগুলো দরকার
+    }
+  })
+  .populate({
+    path: "motherRingId",
+    populate: {
+      path: "breeder",
+      select: "loftName breederName status country experience"
+    }
+  })
+  .populate({
+    path: "breeder",
+    select: "loftName breederName status country experience"
+  });
 
   if (!result) {
     throw new ApiError(StatusCodes.NOT_FOUND, "Pigeon not found");
@@ -1630,6 +1693,15 @@ const searchAllPigeonsByNameFromDB = async (query: string) => {
 
   return pigeons;
 };
+const searchAllPigeonsName = async () => {
+  const pigeons = await Pigeon.find({
+    status: { $ne: "Deleted" }, // Deleted না
+    verified: true,             // শুধু verified
+  }).select("_id name").lean(); // শুধু _id এবং name নিয়ে আসবে, lean() দিলে plain JS object
+
+  return pigeons;
+};
+
 
 
 
@@ -1661,6 +1733,7 @@ export const PigeonService = {
   getMyPigeonsFromDB,
   searchPigeonsByNameFromDB,
   searchAllPigeonsByNameFromDB,
+  searchAllPigeonsName,
   getMyAllPigeonDetailsFromDB,
   togglePigeonStatusInDB
 };
