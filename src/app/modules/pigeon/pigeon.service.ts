@@ -829,13 +829,16 @@ const updatePigeonToDB = async (
     _id: { $ne: pigeonId }, // exclude current pigeon
   });
 
-  if (verifiedExist) {
-    // if (verifiedExist.ringNumber === parsedData.ringNumber)
-    //   throw new ApiError(StatusCodes.CONFLICT, "This Ring Number belongs to a verified pigeon and cannot be used");
-    if (verifiedExist.name === parsedData.name)
-      throw new ApiError(StatusCodes.CONFLICT, "This name belongs to a verified pigeon and cannot be used");
+   if (verifiedExist) {
+    const originalNameUnchanged = pigeon.name === parsedData.name;
+    if (!originalNameUnchanged) {
+      if (verifiedExist.name === parsedData.name)
+        throw new ApiError(
+          StatusCodes.CONFLICT,
+          "This name belongs to a verified pigeon and cannot be used"
+        );
+    }
   }
-
 
 // 🔍 Duplicate check: same ringNumber + country + birthYear
 if (parsedData.ringNumber && parsedData.country && parsedData.birthYear) {
