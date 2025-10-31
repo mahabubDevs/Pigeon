@@ -28,12 +28,12 @@ export const BreederService = {
   query: getAllBreeders = {}
 ): Promise<{
   breeder: IBreeder[];
-  pagination: {
-    total: number;
-    limit: number;
-    page: number;
-    totalPage: number;
-  };
+  // pagination: {
+  //   total: number;
+  //   limit: number;
+  //   page: number;
+  //   totalPage: number;
+  // };
 }> => {
   // Step 1: Define searchable fields (যেখানে search করতে চাও)
   const searchableFields = ["email", "breederName", "country","loftName"]; // example fields
@@ -53,19 +53,19 @@ export const BreederService = {
   const breeder = await builder.modelQuery;
   const pagination = await builder.getPaginationInfo();
 
-  return { pagination, breeder };
+  return {  breeder };
 },
 
   getVerifyAllBreeders: async (
   query: getAllBreeders = {}
 ): Promise<{
   breeder: IBreeder[];
-  pagination: {
-    total: number;
-    limit: number;
-    page: number;
-    totalPage: number;
-  };
+  // pagination: {
+  //   total: number;
+  //   limit: number;
+  //   page: number;
+  //   totalPage: number;
+  // };
 }> => {
   // Step 1: Define searchable fields (যেখানে search করতে চাও)
   const searchableFields = ["email", "breederName", "country","loftName"]; // example fields
@@ -85,7 +85,7 @@ export const BreederService = {
   const breeder = await builder.modelQuery;
   const pagination = await builder.getPaginationInfo();
 
-  return { pagination, breeder };
+  return {  breeder };
 },
 
 

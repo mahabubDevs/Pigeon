@@ -58,12 +58,12 @@ const createUser = async (payload: Partial<IUser>): Promise<IUser> => {
  
 const getAllUsers = async (query: GetAllUsersQuery = {}): Promise<{
   users: any[];
-  pagination: {
-    total: number;
-    limit: number;
-    page: number;
-    totalPage: number;
-  };
+  // pagination: {
+  //   total: number;
+  //   limit: number;
+  //   page: number;
+  //   totalPage: number;
+  // };
 }> => {
   // 1️⃣ Fetch users
   const builder = new QueryBuilder<IUser>(User.find({ role: { $ne: 'SUPER_ADMIN' }, verified:true }), query)
@@ -94,7 +94,7 @@ const getAllUsers = async (query: GetAllUsersQuery = {}): Promise<{
     };
   });
 
-  return { pagination, users: usersWithPlan };
+  return {  users: usersWithPlan };
 };
 
 
