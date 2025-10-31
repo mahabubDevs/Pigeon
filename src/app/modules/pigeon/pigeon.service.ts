@@ -1193,7 +1193,7 @@ const getMyAllPigeonDetailsFromDB = async (
       user: "name email",
       fatherRingId: "ringNumber name",
       motherRingId: "ringNumber name",
-      breeder: "breederName",
+      breeder: "loftName breederName status country ",
     }
   );
 
@@ -1222,7 +1222,7 @@ const getMyAllPigeonDetailsFromDB = async (
       user: "name email",
       fatherRingId: "ringNumber name",
       motherRingId: "ringNumber name",
-      breeder: "breederName",
+      breeder: "loftName breederName status country ",
     }
   );
 
