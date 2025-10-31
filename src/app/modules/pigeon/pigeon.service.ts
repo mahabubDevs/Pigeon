@@ -927,7 +927,7 @@ const getAllPigeonsFromDB = async (
       user: "name email",
       fatherRingId: "ringNumber name",
       motherRingId: "ringNumber name",
-      breeder: "breederName"
+      breeder: "loftName breederName status country ",
     });
 
   // Execute query
@@ -967,7 +967,7 @@ const getAllPigeonsAdminsFromDB = async (
       user: "name email",
       fatherRingId: "ringNumber name",
       motherRingId: "ringNumber name",
-      breeder: "breederName"
+      breeder: "loftName breederName status country ",
     });
 
   // Execute query
