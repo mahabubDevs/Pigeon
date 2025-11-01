@@ -18,7 +18,7 @@ import { Breeder } from "../breeder/breeder.model";
 import { Loft } from "../loft/verifyloft.model";
 
 // Create Pigeon in DB
-
+const pigeonCountMap = new Map<string, number>();
 
 // const createPigeonToDB = async (data: any, files: any, user: any) => {
 //   if (!data) throw new ApiError(StatusCodes.BAD_REQUEST, "Data field is required");
@@ -770,130 +770,147 @@ const updatePigeonToDB = async (
   const pigeon = await Pigeon.findById(pigeonId);
   if (!pigeon) throw new ApiError(StatusCodes.NOT_FOUND, "Pigeon not found");
 
-  // Parse JSON string if needed
-  let parsedData: any = typeof data === "string" ? JSON.parse(data) : { ...data };
+  // Parse incoming data
+  const parsedData: any = typeof data === "string" ? JSON.parse(data) : { ...data };
 
-  // --- Free user restrictions (non-admin cannot modify these) ---
+  // Free user restrictions
   if (!["ADMIN", "SUPER_ADMIN"].includes(user.role)) {
     parsedData.verified = false;
     parsedData.iconic = false;
     parsedData.iconicScore = 0;
   }
 
-  // --- Numeric conversion ---
+  // Numeric conversion
   ["birthYear", "racerRating", "breederRating", "racingRating"].forEach(field => {
     if (parsedData[field] !== undefined) parsedData[field] = Number(parsedData[field]);
   });
 
-  // --- Father/Mother auto-create logic ---
-  if (parsedData.fatherRingId && parsedData.fatherRingId.trim() !== "") {
-    let father = await Pigeon.findOne({ ringNumber: parsedData.fatherRingId });
-    if (!father) {
-      father = await Pigeon.create({ ringNumber: parsedData.fatherRingId, verified: false, user: user._id });
+// Father logic
+if (parsedData.fatherRingId !== undefined) {
+    const newFatherRing = parsedData.fatherRingId?.trim();
+    if (newFatherRing === pigeon.ringNumber) {
+        throw new ApiError(StatusCodes.BAD_REQUEST, "You cannot assign the pigeon itself as father.");
     }
-    parsedData.fatherRingId = father._id;
-  } else parsedData.fatherRingId = null;
 
-  if (parsedData.motherRingId && parsedData.motherRingId.trim() !== "") {
-    let mother = await Pigeon.findOne({ ringNumber: parsedData.motherRingId });
-    if (!mother) {
-      mother = await Pigeon.create({ ringNumber: parsedData.motherRingId, verified: false, user: user._id });
+    if (newFatherRing) {
+        let father = await Pigeon.findOne({ ringNumber: newFatherRing });
+        if (!father) {
+            father = await Pigeon.create({ ringNumber: newFatherRing, verified: false, user: user._id });
+        }
+        parsedData.fatherRingId = father._id;
+    } else {
+        // Empty দিলে আগের value রাখবে
+        parsedData.fatherRingId = pigeon.fatherRingId;
     }
-    parsedData.motherRingId = mother._id;
-  } else parsedData.motherRingId = null;
+} else {
+    parsedData.fatherRingId = pigeon.fatherRingId; // আগের value রাখবে
+}
 
-  // --- Breeder logic (auto-create if not exists) ---
-  if (parsedData.breeder) {
-    parsedData.breeder = parsedData.breeder.trim();
-    if (parsedData.breeder !== "") {
-      let existingBreeder = await Breeder.findOne({ breederName: parsedData.breeder });
-      if (existingBreeder) {
-        parsedData.breeder = existingBreeder._id;
-      } else {
+// Mother logic
+if (parsedData.motherRingId !== undefined) {
+    const newMotherRing = parsedData.motherRingId?.trim();
+    if (newMotherRing === pigeon.ringNumber) {
+        throw new ApiError(StatusCodes.BAD_REQUEST, "You cannot assign the pigeon itself as mother or father.");
+    }
+
+    if (newMotherRing) {
+        let mother = await Pigeon.findOne({ ringNumber: newMotherRing });
+        if (!mother) {
+            mother = await Pigeon.create({ ringNumber: newMotherRing, verified: false, user: user._id });
+        }
+        parsedData.motherRingId = mother._id;
+    } else {
+        // Empty দিলে আগের value রাখবে
+        parsedData.motherRingId = pigeon.motherRingId;
+    }
+} else {
+    parsedData.motherRingId = pigeon.motherRingId; // আগের value রাখবে
+}
+
+  // Breeder logic (update only if field exists)
+  if (parsedData.breeder !== undefined) {
+    if (parsedData.breeder?.trim() !== "") {
+      const existingBreeder = await Breeder.findOne({ breederName: parsedData.breeder.trim() });
+      if (existingBreeder) parsedData.breeder = existingBreeder._id;
+      else {
         const newBreeder = await Breeder.create({
           loftName: parsedData.breeder,
-          // breederName: parsedData.breeder,
           status: false,
           experience: "none",
           country: parsedData.country || "Unknown",
         });
         parsedData.breeder = newBreeder._id;
       }
-    } else parsedData.breeder = null;
-  } else parsedData.breeder = null;
+    } else {
+      parsedData.breeder = null;
+    }
+  } else {
+    parsedData.breeder = pigeon.breeder;
+  }
 
-  // --- Verified pigeon conflict check ---
+  // Verified pigeon conflict check
   const verifiedExist = await Pigeon.findOne({
     $or: [{ ringNumber: parsedData.ringNumber }, { name: parsedData.name }],
     verified: true,
-    _id: { $ne: pigeonId }, // exclude current pigeon
+    _id: { $ne: pigeonId },
   });
+  if (verifiedExist && verifiedExist.name === parsedData.name && pigeon.name !== parsedData.name) {
+    throw new ApiError(StatusCodes.CONFLICT, "This name belongs to a verified pigeon and cannot be used");
+  }
 
-   if (verifiedExist) {
-    const originalNameUnchanged = pigeon.name === parsedData.name;
-    if (!originalNameUnchanged) {
-      if (verifiedExist.name === parsedData.name)
+  // Duplicate check: same ringNumber + country + birthYear
+  if (parsedData.ringNumber && parsedData.country && parsedData.birthYear) {
+    const originalUnchanged =
+      pigeon.ringNumber === parsedData.ringNumber &&
+      pigeon.country === parsedData.country &&
+      pigeon.birthYear === parsedData.birthYear;
+
+    if (!originalUnchanged) {
+      const duplicatePigeon = await Pigeon.findOne({
+        ringNumber: parsedData.ringNumber,
+        country: parsedData.country,
+        birthYear: parsedData.birthYear,
+        _id: { $ne: pigeonId },
+      });
+      if (duplicatePigeon) {
         throw new ApiError(
           StatusCodes.CONFLICT,
-          "This name belongs to a verified pigeon and cannot be used"
+          "This pigeon is already registered in our database. To add it to your loft database, go to the Pigeon Database and press the “+” button."
         );
+      }
     }
   }
 
-// 🔍 Duplicate check: same ringNumber + country + birthYear
-if (parsedData.ringNumber && parsedData.country && parsedData.birthYear) {
-  const originalCombinationUnchanged =
-    pigeon.ringNumber === parsedData.ringNumber &&
-    pigeon.country === parsedData.country &&
-    pigeon.birthYear === parsedData.birthYear;
-
-  if (!originalCombinationUnchanged) {
-    // শুধু তখনই check করো যদি combination পরিবর্তন হয়ে থাকে
-    const duplicatePigeon = await Pigeon.findOne({
-      ringNumber: parsedData.ringNumber,
-      country: parsedData.country,
-      birthYear: parsedData.birthYear,
-      _id: { $ne: pigeonId }, // exclude current pigeon
-    });
-
-    if (duplicatePigeon) {
-      throw new ApiError(
-        StatusCodes.CONFLICT,
-        "This pigeon is already registered in our database. To add it to your loft database, go to the Pigeon Database and press the “+” button."
-      );
-    }
-  }
-}
-
-
-  // --- Handle individual photos ---
-  const photoFields = ["pigeonPhoto", "eyePhoto", "ownershipPhoto", "pedigreePhoto", "DNAPhoto"];
+  // Handle photos
+  const photoFields: (keyof IPigeon)[] = ["pigeonPhoto", "eyePhoto", "ownershipPhoto", "pedigreePhoto", "DNAPhoto"];
   photoFields.forEach(field => {
     if (files && files[field] && files[field][0]) parsedData[field] = `/images/${files[field][0].filename}`;
+    else if (parsedData[field] === undefined) parsedData[field] = pigeon[field]; // আগের value রাখো
   });
 
-  // --- Extra photos ---
+  // Extra photos
   let updatedPhotos: string[] = pigeon.photos || [];
   const remainingPhotos: string[] = parsedData.remaining || [];
   if (remainingPhotos.length > 0) updatedPhotos = updatedPhotos.filter(photo => remainingPhotos.includes(photo));
   if (files && files.photos) updatedPhotos.push(...files.photos.map((file: Express.Multer.File) => `/images/${file.filename}`));
   parsedData.photos = Array.from(new Set(updatedPhotos));
 
-  // --- Optional results ---
-  if (!parsedData.results) parsedData.results = [];
-  else if (typeof parsedData.results === "string") {
-    try {
-      parsedData.results = JSON.parse(parsedData.results);
-      if (!Array.isArray(parsedData.results)) parsedData.results = [];
-    } catch {
-      parsedData.results = [];
+  // Optional results
+  if (parsedData.results !== undefined) {
+    if (typeof parsedData.results === "string") {
+      try {
+        parsedData.results = JSON.parse(parsedData.results);
+        if (!Array.isArray(parsedData.results)) parsedData.results = pigeon.results || [];
+      } catch {
+        parsedData.results = pigeon.results || [];
+      }
     }
-  }
+  } else parsedData.results = pigeon.results || [];
 
-  // --- Merge existing pigeon with new data ---
+  // Merge old and new data
   const payload: Partial<IPigeon> = { ...pigeon.toObject(), ...parsedData };
 
-  // --- Update database ---
+  // Update database
   const updatedPigeon = await Pigeon.findByIdAndUpdate(pigeonId, payload, { new: true });
   if (!updatedPigeon) throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to update pigeon");
 
@@ -1308,11 +1325,52 @@ const deletePigeonFromDB = async (id: string, user: any): Promise<any> => {
 
 
 // Get Pigeon with family members (parents) up to a certain depth
+// const getPigeonWithFamily = async (pigeonId: string, maxDepth = 5) => {
+//   const populateFamily = async (pigeon: any, depth = 0): Promise<any> => {
+//     if (!pigeon) return pigeon;
+
+//     // Always populate current pigeon
+//     const populatedPigeonRaw = await Pigeon.findById(pigeon._id)
+//       .populate(["fatherRingId", "motherRingId", "breeder"])
+//       .lean();
+
+//     if (!populatedPigeonRaw) return null;
+
+//     const populatedPigeon = populatedPigeonRaw;
+
+//     // Recurse only if depth < maxDepth
+//     if (depth < maxDepth) {
+//       if (populatedPigeon.fatherRingId) {
+//         populatedPigeon.fatherRingId = await populateFamily(
+//           populatedPigeon.fatherRingId,
+//           depth + 1
+//         );
+//       }
+//       if (populatedPigeon.motherRingId) {
+//         populatedPigeon.motherRingId = await populateFamily(
+//           populatedPigeon.motherRingId,
+//           depth + 1
+//         );
+//       }
+//     }
+
+//     return populatedPigeon;
+//   };
+
+//   const pigeon = await Pigeon.findById(pigeonId);
+//   if (!pigeon) throw new ApiError(StatusCodes.NOT_FOUND, "Pigeon not found");
+
+//   const fullFamily = await populateFamily(pigeon);
+//   return fullFamily;
+// };
+
+
 const getPigeonWithFamily = async (pigeonId: string, maxDepth = 5) => {
+  const pigeonCountMap = new Map<string, number>();
+
   const populateFamily = async (pigeon: any, depth = 0): Promise<any> => {
     if (!pigeon) return pigeon;
 
-    // Always populate current pigeon
     const populatedPigeonRaw = await Pigeon.findById(pigeon._id)
       .populate(["fatherRingId", "motherRingId", "breeder"])
       .lean();
@@ -1320,6 +1378,51 @@ const getPigeonWithFamily = async (pigeonId: string, maxDepth = 5) => {
     if (!populatedPigeonRaw) return null;
 
     const populatedPigeon = populatedPigeonRaw;
+
+    // / 🔁 Duplicate count for pedigree
+    const idStr = populatedPigeon._id.toString();
+    const currentCount = pigeonCountMap.get(idStr) || 0;
+    pigeonCountMap.set(idStr, currentCount + 1);
+
+    const isPedigreeSame = pigeonCountMap.get(idStr)! > 1;
+    const isVerified = populatedPigeon.verified;
+    const isIconic = populatedPigeon.iconic;
+    const breederScoreHigh =
+      populatedPigeon.iconicScore && populatedPigeon.iconicScore >= 9;
+
+    // 🎨 Color logic
+    if (isIconic && isVerified && breederScoreHigh && isPedigreeSame) {
+      populatedPigeon.colorField = "#FFFF83"; // Iconic overrides all
+    } else if (isIconic && isVerified && breederScoreHigh) {
+      populatedPigeon.colorField = "#FFFF83";
+    } else if (isIconic && isPedigreeSame && breederScoreHigh) {
+      populatedPigeon.colorField = "#FFFF83";
+    } else if (isIconic && isPedigreeSame) {
+      populatedPigeon.colorField = "#FFFF83";
+    } else if (isIconic && isVerified) {
+      populatedPigeon.colorField = "#FFFF83";
+    } else if (isIconic && breederScoreHigh) {
+      populatedPigeon.colorField = "#FFFF83";
+    } else if (isVerified && isPedigreeSame && breederScoreHigh) {
+      populatedPigeon.colorField = "#90EE90";
+    } else if (isVerified && breederScoreHigh) {
+      populatedPigeon.colorField = "#90EE90";
+    } else if (breederScoreHigh && isPedigreeSame) {
+      populatedPigeon.colorField = "#90EE90";
+    } else if (isVerified && isPedigreeSame) {
+      populatedPigeon.colorField = "#FFFFE0";
+    } else if (breederScoreHigh) {
+      populatedPigeon.colorField = "#90EE90";
+    } else if (isVerified) {
+      populatedPigeon.colorField = "#FFFFE0";
+    } else if (isPedigreeSame) {
+      populatedPigeon.colorField = "#ADD8E6";
+    } else if (isIconic) {
+      populatedPigeon.colorField = "#FFFF83";
+    } else {
+      populatedPigeon.colorField = "#FFFFFF";
+    }
+
 
     // Recurse only if depth < maxDepth
     if (depth < maxDepth) {
@@ -1346,6 +1449,9 @@ const getPigeonWithFamily = async (pigeonId: string, maxDepth = 5) => {
   const fullFamily = await populateFamily(pigeon);
   return fullFamily;
 };
+
+
+
 
 // const getPigeonWithFamily = async (pigeonId: string, maxDepth = 5) => {
 //   const allPigeons = await Pigeon.find({})

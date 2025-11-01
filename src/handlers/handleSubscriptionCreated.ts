@@ -153,3 +153,78 @@ try {
     throw error;
   }
 };
+
+
+
+//=================================> update code but not use . 
+
+
+// import { StatusCodes } from 'http-status-codes';
+// import Stripe from 'stripe';
+// import stripe from '../config/stripe';
+// import ApiError from '../errors/ApiErrors';
+// import { Subscription } from '../app/modules/subscription/subscription.model';
+// import { User } from '../app/modules/user/user.model';
+// import { Package } from '../app/modules/package/package.model';
+// import { NotificationService } from '../app/modules/notification/notification.service';
+
+// export const handleSubscriptionCreated = async (data: Stripe.Subscription) => {
+//   try {
+//     const subscription:any = await stripe.subscriptions.retrieve(data.id);
+//     const customer = await stripe.customers.retrieve(subscription.customer as string) as Stripe.Customer;
+
+//     if (!customer.email) throw new ApiError(StatusCodes.BAD_REQUEST, 'No email found');
+
+//     const user = await User.findOne({ email: customer.email });
+//     if (!user) throw new ApiError(StatusCodes.NOT_FOUND, 'User not found');
+
+//     const priceId = subscription.items.data[0]?.price?.id;
+//     const pricingPlan = await Package.findOne({ priceId });
+
+//     if (!pricingPlan) throw new ApiError(StatusCodes.NOT_FOUND, 'Pricing plan not found');
+
+//     // Free-trial check
+//     if (pricingPlan.isFreeTrial && user.hasUsedFreeTrial) return;
+//     if (pricingPlan.isFreeTrial && !user.hasUsedFreeTrial) {
+//       user.hasUsedFreeTrial = true;
+//       await user.save();
+//     }
+
+//     const start = subscription.current_period_start;
+//     const end = subscription.current_period_end;
+
+//     // Duplicate check
+//     const existingSub = await Subscription.findOne({ subscriptionId: subscription.id });
+//     if (existingSub) return;
+
+//     const newSub = new Subscription({
+//       user: user._id,
+//       customerId: customer.id,
+//       package: pricingPlan._id,
+//       status: 'active',
+//       trxId: subscription.latest_invoice || '',
+//       amountPaid: subscription.items.data[0].price.unit_amount! / 100,
+//       price: subscription.items.data[0].price.unit_amount! / 100,
+//       subscriptionId: subscription.id,
+//       currentPeriodStart: new Date(start * 1000),
+//       currentPeriodEnd: new Date(end * 1000),
+//       remaining: subscription.items.data[0].quantity || 1,
+//     });
+//     await newSub.save();
+
+//     // Update user
+//     await User.findByIdAndUpdate(user._id, { role: 'PAIDUSER', isSubscribed: true, hasAccess: true });
+
+//     // Notification
+//     await NotificationService.createNotificationToDB({
+//       text: `A new user has subscribed to ${pricingPlan.title}!`,
+//       type: 'ADMIN',
+//       read: false,
+//       referenceId: user._id.toString(),
+//     });
+
+//   } catch (err) {
+//     console.error('Subscription Created Error:', err);
+//     throw err;
+//   }
+// };

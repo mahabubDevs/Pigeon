@@ -26,6 +26,7 @@ export interface IPigeon {
   ownershipPhoto? : string;
   pedigreePhoto? : string;
   DNAPhoto? : string;
+  colorField?: string;
   results?: {
     name: string;
     date: Date;
