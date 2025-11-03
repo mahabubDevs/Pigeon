@@ -387,28 +387,34 @@ if (parsedData.motherRingId && parsedData.motherRingId.trim() !== "") {
 
 if (parsedData.breeder) {
   parsedData.breeder = parsedData.breeder.trim();
+
   if (parsedData.breeder !== "") {
-    // Existing Breeder check
-    let existingBreeder = await Breeder.findOne({ breederName: parsedData.breeder });
+    // Check if breeder (loftName) already exists
+    let existingBreeder = await Breeder.findOne({
+      loftName: new RegExp(`^${parsedData.breeder}$`, "i"), // case-insensitive match
+    });
+
     if (existingBreeder) {
-      parsedData.breeder = existingBreeder._id; // ObjectId assign
+      // ✅ Use existing breeder _id
+      parsedData.breeder = existingBreeder._id;
     } else {
-      // Create new Breeder
+      // 🆕 Create new breeder if not found
       const newBreeder = await Breeder.create({
         loftName: parsedData.breeder,
-        // breederName: parsedData.breeder,
+        breederName: parsedData.breeder,
         status: false,
         experience: "none",
         country: parsedData.country || "Unknown",
       });
-      parsedData.breeder = newBreeder._id; // ObjectId assign
+      parsedData.breeder = newBreeder._id;
     }
   } else {
-    parsedData.breeder = null; // empty string -> null
+    parsedData.breeder = null; // empty string
   }
 } else {
-  parsedData.breeder = null; // undefined -> null
+  parsedData.breeder = null; // undefined
 }
+
 
 
 
