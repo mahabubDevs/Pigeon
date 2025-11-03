@@ -19,10 +19,23 @@ interface getAllBreeders {
 
 export const BreederService = {
   createBreeder: async (data: IBreeder): Promise<IBreeder> => {
-    data.status = Boolean(data.status); // force cast
-    const result = await Breeder.create(data);
-    return result;
+  // status boolean cast
+  data.status = Boolean(data.status);
+
+  // Check if there’s already a verified breeder with same loftName
+  const existingVerified = await Breeder.findOne({
+    loftName: new RegExp(`^${data.loftName.trim()}$`, "i"),
+    status: true,
+  });
+
+  if (existingVerified) {
+    throw new Error(`A verified breeder with loft name "${data.loftName}" already exists.`);
+  }
+
+  const result = await Breeder.create(data);
+  return result;
 },
+
 
   getAllBreeders: async (
   query: getAllBreeders = {}
