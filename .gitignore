@@ -6,3 +6,5 @@ uploads
 .env
 .env.local
 
+/prisma
+.model.prisma

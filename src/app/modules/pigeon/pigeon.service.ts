@@ -1178,72 +1178,57 @@ const getMyAllPigeonDetailsFromDB = async (
   userId: string,
   query: any
 ): Promise<{ data: any[]; pagination: any }> => {
- 
-  console.log("Status filter applied:", query.status);
-  const page = parseInt(query.page as string) || 1;
-  const limit = parseInt(query.limit as string) || 10;
 
-  // --- Step 1: Own pigeons query ---
-  const baseQuery = Pigeon.find({
+  // --- Step 1: Fetch full own pigeons ---
+  const ownFilter: any = {
     user: userId,
     status: { $ne: "Deleted" },
     name: { $exists: true, $ne: "" },
-  });
+  };
 
-  if (query.birthYear) baseQuery.where("birthYear").equals(Number(query.birthYear));
-  if (query.gender) baseQuery.where("gender").equals(new RegExp(`^${query.gender.toString().trim()}$`, "i"));
-  if (query.country) baseQuery.where("country").equals(new RegExp(`^${query.country.toString().trim()}$`, "i"));
-  if (query.status) baseQuery.where("status").equals(new RegExp(`^${query.status.toString().trim()}$`, "i"));
+  if (query.birthYear) ownFilter.birthYear = Number(query.birthYear);
+  if (query.gender) ownFilter.gender = new RegExp(`^${query.gender.trim()}$`, "i");
+  if (query.country) ownFilter.country = new RegExp(`^${query.country.trim()}$`, "i");
+  if (query.status) ownFilter.status = new RegExp(`^${query.status.trim()}$`, "i");
+  if (query.catagory) ownFilter.catagory = new RegExp(`^${query.catagory.trim()}$`, "i");
 
-  
-
-  if (query.catagory) baseQuery.where("catagory").equals(new RegExp(`^${query.catagory.toString().trim()}$`, "i"));
   if (query.breeder) {
-    const breederDoc = await Breeder.findOne({ breederName: new RegExp(`^${query.breeder.toString().trim()}$`, "i") });
-    if (breederDoc) baseQuery.where("breeder").equals(breederDoc._id);
+    const breederDoc = await Breeder.findOne({ breederName: new RegExp(`^${query.breeder.trim()}$`, "i") });
+    if (breederDoc) ownFilter.breeder = breederDoc._id;
   }
 
-  const qbOwn = new QueryBuilder<IPigeon>(baseQuery, query);
-  qbOwn.search(["ringNumber", "name", "country"]).filter().sort().fields().populate(
-    ["user", "fatherRingId", "motherRingId", "breeder"],
-    {
-      user: "name email",
-      fatherRingId: "ringNumber name",
-      motherRingId: "ringNumber name",
-      breeder: "loftName breederName status country ",
-    }
-  );
+  const ownPigeons = await Pigeon.find(ownFilter)
+    .populate("user", "name email")
+    .populate("fatherRingId", "ringNumber name")
+    .populate("motherRingId", "ringNumber name")
+    .populate("breeder", "loftName breederName status country")
+    .lean();
 
-  const ownPigeons = await qbOwn.modelQuery;
-
-  // --- Step 2: UserLoft pigeons query ---
+  // --- Step 2: Fetch full loft pigeons ---
   const loftPigeonIds = await UserLoft.find({ user: userId }).distinct("pigeon");
 
-  const loftQuery = Pigeon.find({ _id: { $in: loftPigeonIds }, status: { $ne: "Deleted" } });
+  const loftFilter: any = {
+    _id: { $in: loftPigeonIds },
+    status: { $ne: "Deleted" },
+  };
 
-  if (query.birthYear) loftQuery.where("birthYear").equals(Number(query.birthYear));
-  if (query.gender) loftQuery.where("gender").equals(new RegExp(`^${query.gender.toString().trim()}$`, "i"));
-  if (query.country) loftQuery.where("country").equals(new RegExp(`^${query.country.toString().trim()}$`, "i"));
-  
-  if (query.status) loftQuery.where("status").equals(new RegExp(`^${query.status.toString().trim()}$`, "i"));
-  if (query.catagory) loftQuery.where("catagory").equals(new RegExp(`^${query.catagory.toString().trim()}$`, "i"));
+  if (query.birthYear) loftFilter.birthYear = Number(query.birthYear);
+  if (query.gender) loftFilter.gender = new RegExp(`^${query.gender.trim()}$`, "i");
+  if (query.country) loftFilter.country = new RegExp(`^${query.country.trim()}$`, "i");
+  if (query.status) loftFilter.status = new RegExp(`^${query.status.trim()}$`, "i");
+  if (query.catagory) loftFilter.catagory = new RegExp(`^${query.catagory.trim()}$`, "i");
+
   if (query.breeder) {
-    const breederDoc = await Breeder.findOne({ breederName: new RegExp(`^${query.breeder.toString().trim()}$`, "i") });
-    if (breederDoc) loftQuery.where("breeder").equals(breederDoc._id);
+    const breederDoc = await Breeder.findOne({ breederName: new RegExp(`^${query.breeder.trim()}$`, "i") });
+    if (breederDoc) loftFilter.breeder = breederDoc._id;
   }
 
-  const qbLoft = new QueryBuilder<IPigeon>(loftQuery, query);
-  qbLoft.search(["ringNumber", "name", "country"]).filter().sort().fields().populate(
-    ["user", "fatherRingId", "motherRingId", "breeder"],
-    {
-      user: "name email",
-      fatherRingId: "ringNumber name",
-      motherRingId: "ringNumber name",
-      breeder: "loftName breederName status country ",
-    }
-  );
-
-  let loftPigeons = await qbLoft.modelQuery;
+  let loftPigeons = await Pigeon.find(loftFilter)
+    .populate("user", "name email")
+    .populate("fatherRingId", "ringNumber name")
+    .populate("motherRingId", "ringNumber name")
+    .populate("breeder", "loftName breederName status country")
+    .lean();
 
   // --- Attach loft info (addedAt) ---
   const loftMap = await UserLoft.find({ user: userId, pigeon: { $in: loftPigeonIds } })
@@ -1252,24 +1237,49 @@ const getMyAllPigeonDetailsFromDB = async (
 
   loftPigeons = loftPigeons.map(p => {
     const loftInfo = loftMap.find(l => l.pigeon.toString() === p._id.toString());
-    const plainPigeon = JSON.parse(JSON.stringify(p));
-    return { ...plainPigeon, loftInfo: loftInfo ? { addedAt: loftInfo.addedAt } : undefined };
+    return { ...p, loftInfo: loftInfo ? { addedAt: loftInfo.addedAt } : undefined };
   });
 
   // --- Step 3: Combine own + loft pigeons ---
   let allPigeons: any[] = [...ownPigeons, ...loftPigeons];
 
-  // --- Step 4: Manual pagination ---
-  const total = allPigeons.length;
-  const totalPage = Math.ceil(total / limit);
-  const start = (page - 1) * limit;
-  const end = start + limit;
-  const paginatedData = allPigeons.slice(start, end);
+  // --- Step 4: Apply QueryBuilder filters/sorting if any ---
+  const qb = new QueryBuilder<IPigeon>(Pigeon.find({ _id: { $in: allPigeons.map(p => p._id) } }), query);
+  qb.search(["ringNumber", "name", "country"]).filter().sort().fields().populate(
+    ["user", "fatherRingId", "motherRingId", "breeder"],
+    {
+      user: "name email",
+      fatherRingId: "ringNumber name",
+      motherRingId: "ringNumber name",
+      breeder: "loftName breederName status country",
+    }
+  );
+
+  let filteredPigeons = await qb.modelQuery;
+
+  // --- Step 5: Apply pagination only if user provides page/limit ---
+  let page = query.page ? parseInt(query.page as string) : null;
+  let limit = query.limit ? parseInt(query.limit as string) : null;
+  let paginatedData = filteredPigeons;
+
+  const total = filteredPigeons.length;
+  let totalPage = 1;
+
+  if (page && limit) {
+    totalPage = Math.ceil(total / limit);
+    const start = (page - 1) * limit;
+    const end = start + limit;
+    paginatedData = filteredPigeons.slice(start, end);
+  } else {
+    page = 1;
+    limit = total;
+  }
 
   const pagination = { total, limit, page, totalPage };
 
   return { pagination, data: paginatedData };
-};   
+};
+
 
 
 
