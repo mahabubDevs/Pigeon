@@ -1,7 +1,7 @@
 node_modules
 uploads
 /winston
-dist
+
 /prisma
 .env
 .env.local
