@@ -1,11 +1,10 @@
 node_modules
 uploads
 /winston
-dist
+/dist
 /prisma
 .env
 .env.local
 
 /prisma
 .model.prisma
-/src

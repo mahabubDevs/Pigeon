@@ -793,45 +793,48 @@ const updatePigeonToDB = async (
 
 // Father logic
 if (parsedData.fatherRingId !== undefined) {
-    const newFatherRing = parsedData.fatherRingId?.trim();
-    if (newFatherRing === pigeon.ringNumber) {
-        throw new ApiError(StatusCodes.BAD_REQUEST, "You cannot assign the pigeon itself as father.");
-    }
+  const newFatherRing = parsedData.fatherRingId?.trim();
 
-    if (newFatherRing) {
-        let father = await Pigeon.findOne({ ringNumber: newFatherRing });
-        if (!father) {
-            father = await Pigeon.create({ ringNumber: newFatherRing, verified: false, user: user._id });
-        }
-        parsedData.fatherRingId = father._id;
-    } else {
-        // Empty দিলে আগের value রাখবে
-        parsedData.fatherRingId = pigeon.fatherRingId;
+  if (newFatherRing === pigeon.ringNumber) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, "You cannot assign the pigeon itself as father.");
+  }
+
+  if (newFatherRing) {
+    let father = await Pigeon.findOne({ ringNumber: newFatherRing });
+    if (!father) {
+      father = await Pigeon.create({ ringNumber: newFatherRing, verified: false, user: user._id });
     }
+    parsedData.fatherRingId = father._id;
+  } else {
+    // 🔹 যদি খালি দেওয়া হয়, null করে দেবে
+    parsedData.fatherRingId = null;
+  }
 } else {
-    parsedData.fatherRingId = pigeon.fatherRingId; // আগের value রাখবে
+  parsedData.fatherRingId = pigeon.fatherRingId; // ফিল্ড না এলে আগেরটা থাকবে
 }
 
 // Mother logic
 if (parsedData.motherRingId !== undefined) {
-    const newMotherRing = parsedData.motherRingId?.trim();
-    if (newMotherRing === pigeon.ringNumber) {
-        throw new ApiError(StatusCodes.BAD_REQUEST, "You cannot assign the pigeon itself as mother or father.");
-    }
+  const newMotherRing = parsedData.motherRingId?.trim();
 
-    if (newMotherRing) {
-        let mother = await Pigeon.findOne({ ringNumber: newMotherRing });
-        if (!mother) {
-            mother = await Pigeon.create({ ringNumber: newMotherRing, verified: false, user: user._id });
-        }
-        parsedData.motherRingId = mother._id;
-    } else {
-        // Empty দিলে আগের value রাখবে
-        parsedData.motherRingId = pigeon.motherRingId;
+  if (newMotherRing === pigeon.ringNumber) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, "You cannot assign the pigeon itself as mother or father.");
+  }
+
+  if (newMotherRing) {
+    let mother = await Pigeon.findOne({ ringNumber: newMotherRing });
+    if (!mother) {
+      mother = await Pigeon.create({ ringNumber: newMotherRing, verified: false, user: user._id });
     }
+    parsedData.motherRingId = mother._id;
+  } else {
+    // 🔹 যদি খালি দেওয়া হয়, null করে দেবে
+    parsedData.motherRingId = null;
+  }
 } else {
-    parsedData.motherRingId = pigeon.motherRingId; // আগের value রাখবে
+  parsedData.motherRingId = pigeon.motherRingId; // ফিল্ড না এলে আগেরটা থাকবে
 }
+
 
  // 🔹 Breeder logic (update time)
 if (parsedData.breeder !== undefined) {
