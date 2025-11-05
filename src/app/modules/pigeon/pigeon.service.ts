@@ -833,26 +833,39 @@ if (parsedData.motherRingId !== undefined) {
     parsedData.motherRingId = pigeon.motherRingId; // আগের value রাখবে
 }
 
-  // Breeder logic (update only if field exists)
-  if (parsedData.breeder !== undefined) {
-    if (parsedData.breeder?.trim() !== "") {
-      const existingBreeder = await Breeder.findOne({ breederName: parsedData.breeder.trim() });
-      if (existingBreeder) parsedData.breeder = existingBreeder._id;
-      else {
-        const newBreeder = await Breeder.create({
-          loftName: parsedData.breeder,
-          status: false,
-          experience: "none",
-          country: parsedData.country || "Unknown",
-        });
-        parsedData.breeder = newBreeder._id;
-      }
+ // 🔹 Breeder logic (update time)
+if (parsedData.breeder !== undefined) {
+  parsedData.breeder = parsedData.breeder.trim();
+
+  if (parsedData.breeder !== "") {
+    // Case-insensitive match for existing breeder
+    let existingBreeder = await Breeder.findOne({
+      loftName: new RegExp(`^${parsedData.breeder}$`, "i"),
+    });
+
+    if (existingBreeder) {
+      // ✅ Use existing breeder _id
+      parsedData.breeder = existingBreeder._id;
     } else {
-      parsedData.breeder = null;
+      // 🆕 Create new breeder if not found
+      const newBreeder = await Breeder.create({
+        loftName: parsedData.breeder,
+        breederName: parsedData.breeder,
+        status: false,
+        experience: "none",
+        country: parsedData.country || "Unknown",
+      });
+      parsedData.breeder = newBreeder._id;
     }
   } else {
-    parsedData.breeder = pigeon.breeder;
+    // breeder ফিল্ড খালি থাকলে null
+    parsedData.breeder = null;
   }
+} else {
+  // breeder ফিল্ড না থাকলে পুরনো breeder রাখবে
+  parsedData.breeder = pigeon.breeder;
+}
+
 
   // Verified pigeon conflict check
   const verifiedExist = await Pigeon.findOne({
