@@ -1271,7 +1271,7 @@ const getPigeonWithFamily = (pigeonId_1, ...args_1) => __awaiter(void 0, [pigeon
         pigeonCountMap.set(idStr, currentCount + 1);
         const isPedigreeSame = pigeonCountMap.get(idStr) > 1;
         const isVerified = populatedPigeon.verified;
-        const isIconic = populatedPigeon.iconic;
+        const isIconic = populatedPigeon.iconic && populatedPigeon.iconicScore && populatedPigeon.iconicScore >= 90;
         const breederScoreHigh = populatedPigeon.breederRating && populatedPigeon.breederRating >= 9;
         const isRacer = populatedPigeon.racingRating && populatedPigeon.racingRating >= 90;
         // 🎨 Color logic based on priority (optimized)
