@@ -222,17 +222,24 @@ const searchPigeonsByName = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
+
+
+
+
 const searchAllPigeonsByName = catchAsync(async (req: Request, res: Response) => {
   const { searchTerm } = req.query;
 
+  
+  const userId = (req.user as IUser)?._id?.toString(); // Convert ObjectId to string
+
   if (!searchTerm || typeof searchTerm !== "string") {
-    throw new ApiError(StatusCodes.BAD_REQUEST, "Query param ?q required");
+    throw new ApiError(StatusCodes.BAD_REQUEST, "Query parameter ?searchTerm is required");
   }
 
-  const result = await PigeonService.searchAllPigeonsByNameFromDB(searchTerm);
+  const result = await PigeonService.searchAllPigeonsByNameFromDB(searchTerm, userId);
 
   sendResponse(res, {
-    statusCode: 200,
+    statusCode: StatusCodes.OK,
     success: true,
     message: "Pigeons search result",
     data: result,

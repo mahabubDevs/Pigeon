@@ -181,13 +181,15 @@ const searchPigeonsByName = (0, catchAsync_1.default)((req, res) => __awaiter(vo
     });
 }));
 const searchAllPigeonsByName = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a, _b;
     const { searchTerm } = req.query;
+    const userId = (_b = (_a = req.user) === null || _a === void 0 ? void 0 : _a._id) === null || _b === void 0 ? void 0 : _b.toString(); // Convert ObjectId to string
     if (!searchTerm || typeof searchTerm !== "string") {
-        throw new ApiErrors_1.default(http_status_codes_1.StatusCodes.BAD_REQUEST, "Query param ?q required");
+        throw new ApiErrors_1.default(http_status_codes_1.StatusCodes.BAD_REQUEST, "Query parameter ?searchTerm is required");
     }
-    const result = yield pigeon_service_1.PigeonService.searchAllPigeonsByNameFromDB(searchTerm);
+    const result = yield pigeon_service_1.PigeonService.searchAllPigeonsByNameFromDB(searchTerm, userId);
     (0, sendResponse_1.default)(res, {
-        statusCode: 200,
+        statusCode: http_status_codes_1.StatusCodes.OK,
         success: true,
         message: "Pigeons search result",
         data: result,

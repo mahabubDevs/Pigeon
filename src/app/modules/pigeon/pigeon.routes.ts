@@ -46,6 +46,9 @@ router
   .route("/searchAll")
   .get(PigeonController.searchAllPigeonsByName);
 router
+  .route("/searchAllPigeon")
+  .get(auth( USER_ROLES.PAIDUSER, USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN), PigeonController.searchAllPigeonsByName);
+router
   .route("/searchAllName")
   .get(PigeonController.searchAllName);
  router

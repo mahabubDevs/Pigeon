@@ -344,6 +344,7 @@ if (parsedData.fatherRingId && parsedData.fatherRingId.trim() !== "") {
       ringNumber: fatherRing,
       verified: false,
       user: user._id,
+      gender: "Cock",
     });
   }
 
@@ -385,6 +386,7 @@ if (parsedData.motherRingId && parsedData.motherRingId.trim() !== "") {
       ringNumber: motherRing,
       verified: false,
       user: user._id,
+      gender: "Hen",
     });
   }
 
@@ -1550,7 +1552,7 @@ const getPigeonWithFamily = async (pigeonId: string, maxDepth = 5) => {
     const isPedigreeSame = pigeonCountMap.get(idStr)! > 1;
     const isVerified = populatedPigeon.verified;
     const isIconic = populatedPigeon.iconic;
-    const breederScoreHigh = populatedPigeon.iconicScore && populatedPigeon.iconicScore >= 9;
+    const breederScoreHigh = populatedPigeon.breederRating && populatedPigeon.breederRating >= 9;
      const isRacer = populatedPigeon.racingRating && populatedPigeon.racingRating >= 90;
 
     // 🎨 Color logic based on priority (optimized)
@@ -1931,22 +1933,39 @@ const searchPigeonsByNameFromDB = async (query: string) => {
   return pigeons;
 };
 
-const searchAllPigeonsByNameFromDB = async (query: string) => {
-  const pigeons = await Pigeon.find({
-    $and: [
-      { status: { $ne: "Deleted" } },
-      { $or: [{ verified: true }] },
-      {
-        $or: [
-          { name: { $regex: query, $options: "i" } },
-          { ringNumber: { $regex: query, $options: "i" } }
-        ]
-      }
-    ]
-  }).select("_id name ringNumber gender");
+
+
+const searchAllPigeonsByNameFromDB = async (query: string, userId?: string) => {
+  console.log("Search userId:", userId);
+
+  const conditions: any = [
+    { status: { $ne: "Deleted" } },
+    {
+      $or: [
+        { verified: true },
+        userId ? { user: new mongoose.Types.ObjectId(userId) } : null
+      ].filter(Boolean) // null বাদ দেবে
+    },
+    {
+      $or: [
+        { name: { $regex: query, $options: "i" } },
+        { ringNumber: { $regex: query, $options: "i" } }
+      ]
+    }
+  ];
+
+  const pigeons = await Pigeon.find({ $and: conditions }).select(
+    "_id name ringNumber gender verified user"
+  );
 
   return pigeons;
 };
+
+
+
+
+
+
 const searchAllPigeonsName = async () => {
   const pigeons = await Pigeon.find({
     status: { $ne: "Deleted" }, // Deleted না

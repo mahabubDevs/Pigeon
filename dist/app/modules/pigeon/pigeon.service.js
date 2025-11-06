@@ -306,6 +306,7 @@ const createPigeonToDB = (data, files, user) => __awaiter(void 0, void 0, void 0
                 ringNumber: fatherRing,
                 verified: false,
                 user: user._id,
+                gender: "Cock",
             });
         }
         parsedData.fatherRingId = father._id;
@@ -337,6 +338,7 @@ const createPigeonToDB = (data, files, user) => __awaiter(void 0, void 0, void 0
                 ringNumber: motherRing,
                 verified: false,
                 user: user._id,
+                gender: "Hen",
             });
         }
         parsedData.motherRingId = mother._id;
@@ -1270,7 +1272,7 @@ const getPigeonWithFamily = (pigeonId_1, ...args_1) => __awaiter(void 0, [pigeon
         const isPedigreeSame = pigeonCountMap.get(idStr) > 1;
         const isVerified = populatedPigeon.verified;
         const isIconic = populatedPigeon.iconic;
-        const breederScoreHigh = populatedPigeon.iconicScore && populatedPigeon.iconicScore >= 9;
+        const breederScoreHigh = populatedPigeon.breederRating && populatedPigeon.breederRating >= 9;
         const isRacer = populatedPigeon.racingRating && populatedPigeon.racingRating >= 90;
         // 🎨 Color logic based on priority (optimized)
         if (isIconic) {
@@ -1556,19 +1558,24 @@ const searchPigeonsByNameFromDB = (query) => __awaiter(void 0, void 0, void 0, f
     }).select("_id name ringNumber gender");
     return pigeons;
 });
-const searchAllPigeonsByNameFromDB = (query) => __awaiter(void 0, void 0, void 0, function* () {
-    const pigeons = yield pigeon_model_1.Pigeon.find({
-        $and: [
-            { status: { $ne: "Deleted" } },
-            { $or: [{ verified: true }] },
-            {
-                $or: [
-                    { name: { $regex: query, $options: "i" } },
-                    { ringNumber: { $regex: query, $options: "i" } }
-                ]
-            }
-        ]
-    }).select("_id name ringNumber gender");
+const searchAllPigeonsByNameFromDB = (query, userId) => __awaiter(void 0, void 0, void 0, function* () {
+    console.log("Search userId:", userId);
+    const conditions = [
+        { status: { $ne: "Deleted" } },
+        {
+            $or: [
+                { verified: true },
+                userId ? { user: new mongoose_1.default.Types.ObjectId(userId) } : null
+            ].filter(Boolean) // null বাদ দেবে
+        },
+        {
+            $or: [
+                { name: { $regex: query, $options: "i" } },
+                { ringNumber: { $regex: query, $options: "i" } }
+            ]
+        }
+    ];
+    const pigeons = yield pigeon_model_1.Pigeon.find({ $and: conditions }).select("_id name ringNumber gender verified user");
     return pigeons;
 });
 const searchAllPigeonsName = () => __awaiter(void 0, void 0, void 0, function* () {
