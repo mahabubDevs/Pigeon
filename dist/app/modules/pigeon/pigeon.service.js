@@ -1255,14 +1255,15 @@ const getPigeonWithFamily = (pigeonId_1, ...args_1) => __awaiter(void 0, [pigeon
     const pigeonCountMap = new Map();
     const populateFamily = (pigeon_1, ...args_2) => __awaiter(void 0, [pigeon_1, ...args_2], void 0, function* (pigeon, depth = 0) {
         if (!pigeon)
-            return pigeon;
+            return null;
+        // Fetch pigeon with populated fields
         const populatedPigeonRaw = yield pigeon_model_1.Pigeon.findById(pigeon._id)
             .populate(["fatherRingId", "motherRingId", "breeder"])
             .lean();
         if (!populatedPigeonRaw)
             return null;
         const populatedPigeon = populatedPigeonRaw;
-        // / 🔁 Duplicate count for pedigree
+        // 🔁 Duplicate count for pedigree
         const idStr = populatedPigeon._id.toString();
         const currentCount = pigeonCountMap.get(idStr) || 0;
         pigeonCountMap.set(idStr, currentCount + 1);
@@ -1270,53 +1271,27 @@ const getPigeonWithFamily = (pigeonId_1, ...args_1) => __awaiter(void 0, [pigeon
         const isVerified = populatedPigeon.verified;
         const isIconic = populatedPigeon.iconic;
         const breederScoreHigh = populatedPigeon.iconicScore && populatedPigeon.iconicScore >= 9;
-        // 🎨 Color logic
-        if (isIconic && isVerified && breederScoreHigh && isPedigreeSame) {
-            populatedPigeon.colorField = "#FFFF83"; // Iconic overrides all
-        }
-        else if (isIconic && isVerified && breederScoreHigh) {
-            populatedPigeon.colorField = "#FFFF83";
-        }
-        else if (isIconic && isPedigreeSame && breederScoreHigh) {
-            populatedPigeon.colorField = "#FFFF83";
-        }
-        else if (isIconic && isPedigreeSame) {
-            populatedPigeon.colorField = "#FFFF83";
-        }
-        else if (isIconic && isVerified) {
-            populatedPigeon.colorField = "#FFFF83";
-        }
-        else if (isIconic && breederScoreHigh) {
-            populatedPigeon.colorField = "#FFFF83";
-        }
-        else if (isVerified && isPedigreeSame && breederScoreHigh) {
-            populatedPigeon.colorField = "#90EE90";
-        }
-        else if (isVerified && breederScoreHigh) {
-            populatedPigeon.colorField = "#90EE90";
-        }
-        else if (breederScoreHigh && isPedigreeSame) {
-            populatedPigeon.colorField = "#90EE90";
-        }
-        else if (isVerified && isPedigreeSame) {
-            populatedPigeon.colorField = "#FFFFE0";
-        }
-        else if (breederScoreHigh) {
-            populatedPigeon.colorField = "#90EE90";
-        }
-        else if (isVerified) {
-            populatedPigeon.colorField = "#FFFFE0";
+        const isRacer = populatedPigeon.racingRating && populatedPigeon.racingRating >= 90;
+        // 🎨 Color logic based on priority (optimized)
+        if (isIconic) {
+            populatedPigeon.colorField = "#FFD700"; // Gold
         }
         else if (isPedigreeSame) {
-            populatedPigeon.colorField = "#ADD8E6";
+            populatedPigeon.colorField = "#D7ECFA"; // Light Blue
         }
-        else if (isIconic) {
-            populatedPigeon.colorField = "#FFFF83";
+        else if (isRacer) {
+            populatedPigeon.colorField = "#F0E0F0"; // Light Pink / Grey
+        }
+        else if (breederScoreHigh) {
+            populatedPigeon.colorField = "#DFFFE0"; // Light Green
+        }
+        else if (isVerified) {
+            populatedPigeon.colorField = "#FFFFF5"; // Off-white
         }
         else {
-            populatedPigeon.colorField = "#FFFFFF";
+            populatedPigeon.colorField = "#FFFFFF"; // Fallback
         }
-        // Recurse only if depth < maxDepth
+        // Recurse for parents only if depth < maxDepth
         if (depth < maxDepth) {
             if (populatedPigeon.fatherRingId) {
                 populatedPigeon.fatherRingId = yield populateFamily(populatedPigeon.fatherRingId, depth + 1);
@@ -1327,6 +1302,7 @@ const getPigeonWithFamily = (pigeonId_1, ...args_1) => __awaiter(void 0, [pigeon
         }
         return populatedPigeon;
     });
+    // Fetch base pigeon
     const pigeon = yield pigeon_model_1.Pigeon.findById(pigeonId);
     if (!pigeon)
         throw new ApiErrors_1.default(http_status_codes_1.StatusCodes.NOT_FOUND, "Pigeon not found");
