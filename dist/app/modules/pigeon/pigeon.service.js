@@ -281,37 +281,63 @@ const createPigeonToDB = (data, files, user) => __awaiter(void 0, void 0, void 0
         parsedData.iconicScore = 0;
     }
     // Father/Mother ring logic
-    // Father ring logic with gender check
+    // 🕊 Father ring logic with gender + ownership + verified check
     if (parsedData.fatherRingId && parsedData.fatherRingId.trim() !== "") {
-        let father = yield pigeon_model_1.Pigeon.findOne({ ringNumber: parsedData.fatherRingId });
+        const fatherRing = parsedData.fatherRingId.trim();
+        if (fatherRing === parsedData.ringNumber) {
+            throw new ApiErrors_1.default(http_status_codes_1.StatusCodes.BAD_REQUEST, "A pigeon cannot be its own father.");
+        }
+        let father = yield pigeon_model_1.Pigeon.findOne({ ringNumber: fatherRing });
         console.log("Father pigeon found:", father);
         if (father) {
-            // যদি পিজন DB-তে থাকে, তার gender check করা
+            // 🔹 Gender check
             if (((_a = father.gender) === null || _a === void 0 ? void 0 : _a.toLowerCase()) !== "cock") {
                 throw new ApiErrors_1.default(http_status_codes_1.StatusCodes.BAD_REQUEST, "Father pigeon must be a cock. The provided ring number belongs to a hen.");
             }
+            // 🔹 Ownership + verified logic
+            const isOwnPigeon = father.user.toString() === user._id.toString();
+            if (!isOwnPigeon && !father.verified) {
+                throw new ApiErrors_1.default(http_status_codes_1.StatusCodes.BAD_REQUEST, "You can only assign another user's pigeon as father if it is verified.");
+            }
         }
         else {
-            // DB-তে না থাকলে নতুন পিজন create করা
-            father = yield pigeon_model_1.Pigeon.create({ ringNumber: parsedData.fatherRingId, verified: false, user: user._id });
+            // 🆕 DB-তে না থাকলে নতুন তৈরি
+            father = yield pigeon_model_1.Pigeon.create({
+                ringNumber: fatherRing,
+                verified: false,
+                user: user._id,
+            });
         }
-        console.log("mahah", father);
         parsedData.fatherRingId = father._id;
     }
     else {
         parsedData.fatherRingId = null;
     }
+    // 🕊 Mother ring logic with gender + ownership + verified check
     if (parsedData.motherRingId && parsedData.motherRingId.trim() !== "") {
-        let mother = yield pigeon_model_1.Pigeon.findOne({ ringNumber: parsedData.motherRingId });
+        const motherRing = parsedData.motherRingId.trim();
+        if (motherRing === parsedData.ringNumber) {
+            throw new ApiErrors_1.default(http_status_codes_1.StatusCodes.BAD_REQUEST, "A pigeon cannot be its own mother.");
+        }
+        let mother = yield pigeon_model_1.Pigeon.findOne({ ringNumber: motherRing });
         if (mother) {
-            // যদি পিজন DB-তে থাকে, তার gender check করা
+            // 🔹 Gender check
             if (((_b = mother.gender) === null || _b === void 0 ? void 0 : _b.toLowerCase()) !== "hen") {
                 throw new ApiErrors_1.default(http_status_codes_1.StatusCodes.BAD_REQUEST, "Mother pigeon must be a hen. The provided ring number belongs to a cock.");
             }
+            // 🔹 Ownership + verified logic
+            const isOwnPigeon = mother.user.toString() === user._id.toString();
+            if (!isOwnPigeon && !mother.verified) {
+                throw new ApiErrors_1.default(http_status_codes_1.StatusCodes.BAD_REQUEST, "You can only assign another user's pigeon as mother if it is verified.");
+            }
         }
         else {
-            // DB-তে না থাকলে নতুন পিজন create করা
-            mother = yield pigeon_model_1.Pigeon.create({ ringNumber: parsedData.motherRingId, verified: false, user: user._id });
+            // 🆕 DB-তে না থাকলে নতুন তৈরি
+            mother = yield pigeon_model_1.Pigeon.create({
+                ringNumber: motherRing,
+                verified: false,
+                user: user._id,
+            });
         }
         parsedData.motherRingId = mother._id;
     }
@@ -658,6 +684,10 @@ const updatePigeonToDB = (pigeonId, data, files, user) => __awaiter(void 0, void
     const pigeon = yield pigeon_model_1.Pigeon.findById(pigeonId);
     if (!pigeon)
         throw new ApiErrors_1.default(http_status_codes_1.StatusCodes.NOT_FOUND, "Pigeon not found");
+    // 🛑 Check if pigeon is iconic -> only ADMIN can edit
+    if (pigeon.iconic && !["ADMIN", "SUPER_ADMIN"].includes(user.role)) {
+        throw new ApiErrors_1.default(http_status_codes_1.StatusCodes.FORBIDDEN, "You cannot edit an iconic pigeon.");
+    }
     // Parse incoming data
     const parsedData = typeof data === "string" ? JSON.parse(data) : Object.assign({}, data);
     // Free user restrictions
@@ -671,7 +701,45 @@ const updatePigeonToDB = (pigeonId, data, files, user) => __awaiter(void 0, void
         if (parsedData[field] !== undefined)
             parsedData[field] = Number(parsedData[field]);
     });
-    // Father logic
+    // // Father logic
+    // if (parsedData.fatherRingId !== undefined) {
+    //   const newFatherRing = parsedData.fatherRingId?.trim();
+    //   if (newFatherRing === pigeon.ringNumber) {
+    //     throw new ApiError(StatusCodes.BAD_REQUEST, "You cannot assign the pigeon itself as father.");
+    //   }
+    //   if (newFatherRing) {
+    //     let father = await Pigeon.findOne({ ringNumber: newFatherRing });
+    //     if (!father) {
+    //       father = await Pigeon.create({ ringNumber: newFatherRing, verified: false, user: user._id });
+    //     }
+    //     parsedData.fatherRingId = father._id;
+    //   } else {
+    //     // 🔹 যদি খালি দেওয়া হয়, null করে দেবে
+    //     parsedData.fatherRingId = null;
+    //   }
+    // } else {
+    //   parsedData.fatherRingId = pigeon.fatherRingId; // ফিল্ড না এলে আগেরটা থাকবে
+    // }
+    // // Mother logic
+    // if (parsedData.motherRingId !== undefined) {
+    //   const newMotherRing = parsedData.motherRingId?.trim();
+    //   if (newMotherRing === pigeon.ringNumber) {
+    //     throw new ApiError(StatusCodes.BAD_REQUEST, "You cannot assign the pigeon itself as mother or father.");
+    //   }
+    //   if (newMotherRing) {
+    //     let mother = await Pigeon.findOne({ ringNumber: newMotherRing });
+    //     if (!mother) {
+    //       mother = await Pigeon.create({ ringNumber: newMotherRing, verified: false, user: user._id });
+    //     }
+    //     parsedData.motherRingId = mother._id;
+    //   } else {
+    //     // 🔹 যদি খালি দেওয়া হয়, null করে দেবে
+    //     parsedData.motherRingId = null;
+    //   }
+    // } else {
+    //   parsedData.motherRingId = pigeon.motherRingId; // ফিল্ড না এলে আগেরটা থাকবে
+    // }
+    // 🕊 Father logic
     if (parsedData.fatherRingId !== undefined) {
         const newFatherRing = (_a = parsedData.fatherRingId) === null || _a === void 0 ? void 0 : _a.trim();
         if (newFatherRing === pigeon.ringNumber) {
@@ -680,19 +748,24 @@ const updatePigeonToDB = (pigeonId, data, files, user) => __awaiter(void 0, void
         if (newFatherRing) {
             let father = yield pigeon_model_1.Pigeon.findOne({ ringNumber: newFatherRing });
             if (!father) {
-                father = yield pigeon_model_1.Pigeon.create({ ringNumber: newFatherRing, verified: false, user: user._id });
+                throw new ApiErrors_1.default(http_status_codes_1.StatusCodes.BAD_REQUEST, "Father pigeon not found in database.");
+            }
+            // ✅ Logic: user can use own pigeon (any verify status)
+            // Others' pigeon must be verified
+            const isOwnPigeon = father.user.toString() === user._id.toString();
+            if (!isOwnPigeon && !father.verified) {
+                throw new ApiErrors_1.default(http_status_codes_1.StatusCodes.BAD_REQUEST, "You can only assign another user's pigeon if it is verified.");
             }
             parsedData.fatherRingId = father._id;
         }
         else {
-            // 🔹 যদি খালি দেওয়া হয়, null করে দেবে
             parsedData.fatherRingId = null;
         }
     }
     else {
-        parsedData.fatherRingId = pigeon.fatherRingId; // ফিল্ড না এলে আগেরটা থাকবে
+        parsedData.fatherRingId = pigeon.fatherRingId;
     }
-    // Mother logic
+    // 🕊 Mother logic
     if (parsedData.motherRingId !== undefined) {
         const newMotherRing = (_b = parsedData.motherRingId) === null || _b === void 0 ? void 0 : _b.trim();
         if (newMotherRing === pigeon.ringNumber) {
@@ -701,17 +774,22 @@ const updatePigeonToDB = (pigeonId, data, files, user) => __awaiter(void 0, void
         if (newMotherRing) {
             let mother = yield pigeon_model_1.Pigeon.findOne({ ringNumber: newMotherRing });
             if (!mother) {
-                mother = yield pigeon_model_1.Pigeon.create({ ringNumber: newMotherRing, verified: false, user: user._id });
+                throw new ApiErrors_1.default(http_status_codes_1.StatusCodes.BAD_REQUEST, "Mother pigeon not found in database.");
+            }
+            // ✅ Logic: user can use own pigeon (any verify status)
+            // Others' pigeon must be verified
+            const isOwnPigeon = mother.user.toString() === user._id.toString();
+            if (!isOwnPigeon && !mother.verified) {
+                throw new ApiErrors_1.default(http_status_codes_1.StatusCodes.BAD_REQUEST, "You can only assign another user's pigeon if it is verified.");
             }
             parsedData.motherRingId = mother._id;
         }
         else {
-            // 🔹 যদি খালি দেওয়া হয়, null করে দেবে
             parsedData.motherRingId = null;
         }
     }
     else {
-        parsedData.motherRingId = pigeon.motherRingId; // ফিল্ড না এলে আগেরটা থাকবে
+        parsedData.motherRingId = pigeon.motherRingId;
     }
     // 🔹 Breeder logic (update time)
     if (parsedData.breeder !== undefined) {
