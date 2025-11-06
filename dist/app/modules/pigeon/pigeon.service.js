@@ -673,7 +673,7 @@ const createPigeonToDB = (data, files, user) => __awaiter(void 0, void 0, void 0
 //   return updatedPigeon;
 // };
 const updatePigeonToDB = (pigeonId, data, files, user) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b;
+    var _a, _b, _c, _d;
     if (!pigeonId)
         throw new ApiErrors_1.default(http_status_codes_1.StatusCodes.BAD_REQUEST, "Pigeon ID is required");
     if (!data)
@@ -739,7 +739,7 @@ const updatePigeonToDB = (pigeonId, data, files, user) => __awaiter(void 0, void
     // } else {
     //   parsedData.motherRingId = pigeon.motherRingId; // ফিল্ড না এলে আগেরটা থাকবে
     // }
-    // 🕊 Father logic
+    // 🕊 Father logic (gender + ownership + verified)
     if (parsedData.fatherRingId !== undefined) {
         const newFatherRing = (_a = parsedData.fatherRingId) === null || _a === void 0 ? void 0 : _a.trim();
         if (newFatherRing === pigeon.ringNumber) {
@@ -750,11 +750,14 @@ const updatePigeonToDB = (pigeonId, data, files, user) => __awaiter(void 0, void
             if (!father) {
                 throw new ApiErrors_1.default(http_status_codes_1.StatusCodes.BAD_REQUEST, "Father pigeon not found in database.");
             }
-            // ✅ Logic: user can use own pigeon (any verify status)
-            // Others' pigeon must be verified
+            // 🔹 Gender check
+            if (((_b = father.gender) === null || _b === void 0 ? void 0 : _b.toLowerCase()) !== "cock") {
+                throw new ApiErrors_1.default(http_status_codes_1.StatusCodes.BAD_REQUEST, "Father pigeon must be a cock. The provided ring number belongs to a hen.");
+            }
+            // 🔹 Ownership + verified logic
             const isOwnPigeon = father.user.toString() === user._id.toString();
             if (!isOwnPigeon && !father.verified) {
-                throw new ApiErrors_1.default(http_status_codes_1.StatusCodes.BAD_REQUEST, "You can only assign another user's pigeon if it is verified.");
+                throw new ApiErrors_1.default(http_status_codes_1.StatusCodes.BAD_REQUEST, "You can only assign another user's pigeon as father if it is verified.");
             }
             parsedData.fatherRingId = father._id;
         }
@@ -765,9 +768,9 @@ const updatePigeonToDB = (pigeonId, data, files, user) => __awaiter(void 0, void
     else {
         parsedData.fatherRingId = pigeon.fatherRingId;
     }
-    // 🕊 Mother logic
+    // 🕊 Mother logic (gender + ownership + verified)
     if (parsedData.motherRingId !== undefined) {
-        const newMotherRing = (_b = parsedData.motherRingId) === null || _b === void 0 ? void 0 : _b.trim();
+        const newMotherRing = (_c = parsedData.motherRingId) === null || _c === void 0 ? void 0 : _c.trim();
         if (newMotherRing === pigeon.ringNumber) {
             throw new ApiErrors_1.default(http_status_codes_1.StatusCodes.BAD_REQUEST, "You cannot assign the pigeon itself as mother or father.");
         }
@@ -776,11 +779,14 @@ const updatePigeonToDB = (pigeonId, data, files, user) => __awaiter(void 0, void
             if (!mother) {
                 throw new ApiErrors_1.default(http_status_codes_1.StatusCodes.BAD_REQUEST, "Mother pigeon not found in database.");
             }
-            // ✅ Logic: user can use own pigeon (any verify status)
-            // Others' pigeon must be verified
+            // 🔹 Gender check
+            if (((_d = mother.gender) === null || _d === void 0 ? void 0 : _d.toLowerCase()) !== "hen") {
+                throw new ApiErrors_1.default(http_status_codes_1.StatusCodes.BAD_REQUEST, "Mother pigeon must be a hen. The provided ring number belongs to a cock.");
+            }
+            // 🔹 Ownership + verified logic
             const isOwnPigeon = mother.user.toString() === user._id.toString();
             if (!isOwnPigeon && !mother.verified) {
-                throw new ApiErrors_1.default(http_status_codes_1.StatusCodes.BAD_REQUEST, "You can only assign another user's pigeon if it is verified.");
+                throw new ApiErrors_1.default(http_status_codes_1.StatusCodes.BAD_REQUEST, "You can only assign another user's pigeon as mother if it is verified.");
             }
             parsedData.motherRingId = mother._id;
         }
@@ -874,7 +880,7 @@ const updatePigeonToDB = (pigeonId, data, files, user) => __awaiter(void 0, void
                 if (!Array.isArray(parsedData.results))
                     parsedData.results = pigeon.results || [];
             }
-            catch (_c) {
+            catch (_e) {
                 parsedData.results = pigeon.results || [];
             }
         }

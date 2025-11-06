@@ -883,7 +883,7 @@ const updatePigeonToDB = async (
 // }
 
 
-// 🕊 Father logic
+// 🕊 Father logic (gender + ownership + verified)
 if (parsedData.fatherRingId !== undefined) {
   const newFatherRing = parsedData.fatherRingId?.trim();
 
@@ -898,14 +898,20 @@ if (parsedData.fatherRingId !== undefined) {
       throw new ApiError(StatusCodes.BAD_REQUEST, "Father pigeon not found in database.");
     }
 
-    // ✅ Logic: user can use own pigeon (any verify status)
-    // Others' pigeon must be verified
-    const isOwnPigeon = father.user.toString() === user._id.toString();
+    // 🔹 Gender check
+    if (father.gender?.toLowerCase() !== "cock") {
+      throw new ApiError(
+        StatusCodes.BAD_REQUEST,
+        "Father pigeon must be a cock. The provided ring number belongs to a hen."
+      );
+    }
 
+    // 🔹 Ownership + verified logic
+    const isOwnPigeon = father.user.toString() === user._id.toString();
     if (!isOwnPigeon && !father.verified) {
       throw new ApiError(
         StatusCodes.BAD_REQUEST,
-        "You can only assign another user's pigeon if it is verified."
+        "You can only assign another user's pigeon as father if it is verified."
       );
     }
 
@@ -917,7 +923,7 @@ if (parsedData.fatherRingId !== undefined) {
   parsedData.fatherRingId = pigeon.fatherRingId;
 }
 
-// 🕊 Mother logic
+// 🕊 Mother logic (gender + ownership + verified)
 if (parsedData.motherRingId !== undefined) {
   const newMotherRing = parsedData.motherRingId?.trim();
 
@@ -932,14 +938,20 @@ if (parsedData.motherRingId !== undefined) {
       throw new ApiError(StatusCodes.BAD_REQUEST, "Mother pigeon not found in database.");
     }
 
-    // ✅ Logic: user can use own pigeon (any verify status)
-    // Others' pigeon must be verified
-    const isOwnPigeon = mother.user.toString() === user._id.toString();
+    // 🔹 Gender check
+    if (mother.gender?.toLowerCase() !== "hen") {
+      throw new ApiError(
+        StatusCodes.BAD_REQUEST,
+        "Mother pigeon must be a hen. The provided ring number belongs to a cock."
+      );
+    }
 
+    // 🔹 Ownership + verified logic
+    const isOwnPigeon = mother.user.toString() === user._id.toString();
     if (!isOwnPigeon && !mother.verified) {
       throw new ApiError(
         StatusCodes.BAD_REQUEST,
-        "You can only assign another user's pigeon if it is verified."
+        "You can only assign another user's pigeon as mother if it is verified."
       );
     }
 
