@@ -39,6 +39,7 @@ router
 router
     .route("/searchAllName")
     .get(pigeon_controller_1.PigeonController.searchAllName);
+router.route("/check-duplicate").get(pigeon_controller_1.PigeonController.checkDuplicatePigeon);
 router
     .route('/myAllpigeons')
     // .get( authWithPageAccess('pigeon'), PigeonController.getMyAllPigeons);

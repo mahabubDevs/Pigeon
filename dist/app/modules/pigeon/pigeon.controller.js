@@ -249,6 +249,25 @@ const addToLoft = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void
         data: added,
     });
 }));
+const checkDuplicatePigeon = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { ringNumber, country, birthYear } = req.query;
+    // 👉 প্রয়োজনীয় query parameter চেক
+    if (!ringNumber || !country || !birthYear) {
+        throw new ApiErrors_1.default(http_status_codes_1.StatusCodes.BAD_REQUEST, "ringNumber, country and birthYear theree query parameters are required");
+    }
+    // 👉 সার্ভিস কল করে রেজাল্ট আনা
+    const result = yield pigeon_service_1.PigeonService.checkDuplicatePigeon({
+        ringNumber: String(ringNumber),
+        country: String(country),
+        birthYear: Number(birthYear),
+    });
+    (0, sendResponse_1.default)(res, {
+        statusCode: 200,
+        success: true,
+        message: "Duplicate check completed",
+        data: result,
+    });
+}));
 exports.PigeonController = {
     createPigeon,
     updatePigeon,
@@ -266,5 +285,6 @@ exports.PigeonController = {
     searchAllName,
     getMyAllPigeons,
     togglePigeonStatus,
-    addToLoft
+    addToLoft,
+    checkDuplicatePigeon
 };

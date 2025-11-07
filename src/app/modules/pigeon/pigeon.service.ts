@@ -515,21 +515,22 @@ if (nameExist) throw new ApiError(StatusCodes.CONFLICT, "This name belongs to a 
 
 
 
-  // 🔍 Duplicate check: same ringNumber + country + birthYear
-  if (parsedData.ringNumber && parsedData.country && parsedData.birthYear) {
-    const duplicatePigeon = await Pigeon.findOne({
-      ringNumber: parsedData.ringNumber,
-      country: parsedData.country,
-      birthYear: parsedData.birthYear,
-    });
+  // 🔍 Duplicate check: same ringNumber + country + birthYear (only verified pigeons)
+if (parsedData.ringNumber && parsedData.country && parsedData.birthYear) {
+  const duplicatePigeon = await Pigeon.findOne({
+    ringNumber: parsedData.ringNumber,
+    country: parsedData.country,
+    birthYear: parsedData.birthYear,
+    verified: true, // ✅ শুধুমাত্র verified পায়রা চেক করবে
+  });
 
-    if (duplicatePigeon) {
-      throw new ApiError(
-        StatusCodes.CONFLICT,
-        "This pigeon is already registered in our database. To add it to your loft database, go to the Pigeon Database and press the “+” button."
-      );
-    }
+  if (duplicatePigeon) {
+    throw new ApiError(
+      StatusCodes.CONFLICT,
+      "This pigeon is already registered (verified) in our database. To add it to your loft database, go to the Pigeon Database and press the '+' button."
+    );
   }
+}
 
 
 
@@ -1024,6 +1025,7 @@ if (parsedData.breeder !== undefined) {
         ringNumber: parsedData.ringNumber,
         country: parsedData.country,
         birthYear: parsedData.birthYear,
+        // verified: true,
         _id: { $ne: pigeonId },
       });
       if (duplicatePigeon) {
@@ -1992,6 +1994,45 @@ const togglePigeonStatusInDB = async (pigeonId: string) => {
   };
 };
 
+
+const checkDuplicatePigeon = async (params: {
+  ringNumber: string;
+  country: string;
+  birthYear: number;
+}) => {
+  const { ringNumber, country, birthYear } = params;
+
+  // 🔍 Duplicate check: same ringNumber + country + birthYear
+  const duplicatePigeon = await Pigeon.findOne({
+    ringNumber,
+    country,
+    birthYear,
+  })
+    .select("_id name ringNumber country birthYear verified")
+    .lean();
+
+  if (duplicatePigeon && duplicatePigeon.verified === true) {
+    // ✅ শুধু verified পায়রা ডুপ্লিকেট হিসেবে গণ্য হবে
+    return {
+      isDuplicate: true,
+      message:
+        "This pigeon already exists (verified) with the same ring number, country, and birth year. Please use the '+' button to add it to your loft database.",
+      pigeon: duplicatePigeon,
+    };
+  }
+
+  // ❌ যদি পাওয়া না যায় বা verified না হয়
+  return {
+    isDuplicate: false,
+    message: "No verified duplicate pigeon found.",
+  };
+};
+
+
+
+
+
+
 export const PigeonService = {
   createPigeonToDB,
   updatePigeonToDB,
@@ -2008,5 +2049,6 @@ export const PigeonService = {
   searchAllPigeonsByNameFromDB,
   searchAllPigeonsName,
   getMyAllPigeonDetailsFromDB,
-  togglePigeonStatusInDB
+  togglePigeonStatusInDB,
+  checkDuplicatePigeon
 };
