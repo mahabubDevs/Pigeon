@@ -1613,7 +1613,7 @@ const checkDuplicatePigeon = (params) => __awaiter(void 0, void 0, void 0, funct
         // ✅ শুধু verified পায়রা ডুপ্লিকেট হিসেবে গণ্য হবে
         return {
             isDuplicate: true,
-            message: "This pigeon already exists (verified) with the same ring number, country, and birth year. Please use the '+' button to add it to your loft database.",
+            message: "This pigeon already exists (verified) with the same ring number, country, and birth year. Please navigate to Pigeon Database in the menu, use the search function to find the pigeon, and then press the '+' button to add it to your loft database.",
             pigeon: duplicatePigeon,
         };
     }
