@@ -266,8 +266,8 @@ const createPigeonToDB = (data, files, user) => __awaiter(void 0, void 0, void 0
     // Free user validation
     if (user.role === "USER") {
         const pigeonCount = yield pigeon_model_1.Pigeon.countDocuments({ user: user._id });
-        if (pigeonCount >= 50)
-            throw new ApiErrors_1.default(http_status_codes_1.StatusCodes.FORBIDDEN, "Free users can only add up to 50 pigeons");
+        if (pigeonCount >= 50000)
+            throw new ApiErrors_1.default(http_status_codes_1.StatusCodes.FORBIDDEN, "Free users can only add up to 5000 pigeons");
     }
     // Numeric conversion
     ["birthYear", "racerRating", "breederRating", "racingRating"].forEach(field => {
