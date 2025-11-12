@@ -294,7 +294,7 @@ if (parsedData.breeder) parsedData.breeder = parsedData.breeder.trim();
   if (user.role === "USER") {
     const pigeonCount = await Pigeon.countDocuments({ user: user._id });
     if (pigeonCount >= 50000)
-      throw new ApiError(StatusCodes.FORBIDDEN, "Free users can only add up to 5000 pigeons");
+      throw new ApiError(StatusCodes.FORBIDDEN, "Free users can only add up to 50000 pigeons");
   }
 
   // Numeric conversion

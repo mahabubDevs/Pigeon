@@ -72,7 +72,7 @@ const createUserToDB = async (payload: Partial<IUser>): Promise<IUser> => {
         { $set: { authentication } }
     );
 
-const admins = await User.find({ role: 'ADMIN' }).select('_id');
+const admins = await User.find({ role: { $in: ['ADMIN', 'SUPER_ADMIN'] } }).select('_id');
 
 for (const admin of admins) {
   await NotificationService.createNotificationToDB({
