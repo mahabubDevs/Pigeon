@@ -62,7 +62,7 @@ const readNotificationToDB = (user) => __awaiter(void 0, void 0, void 0, functio
 // get notifications for admin
 const adminNotificationFromDB = (...args_1) => __awaiter(void 0, [...args_1], void 0, function* (query = {}) {
     // 1️⃣ Initialize QueryBuilder with ADMIN notifications
-    const builder = new queryBuilder_1.default(notification_model_1.Notification.find({ type: 'ADMIN' }), query)
+    const builder = new queryBuilder_1.default(notification_model_1.Notification.find(), query)
         .search(['text']) // searchable fields, adjust as needed
         .filter() // apply extra filters from query
         .sort() // sort by createdAt or query.sort

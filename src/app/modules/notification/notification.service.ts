@@ -91,7 +91,7 @@ const adminNotificationFromDB = async (
   
   // 1️⃣ Initialize QueryBuilder with ADMIN notifications
   const builder = new QueryBuilder<INotification>(
-    Notification.find({ type: 'ADMIN' }),
+    Notification.find(),
     query
   )
     .search(['text'])  // searchable fields, adjust as needed
