@@ -73,15 +73,15 @@ const createUserToDB = async (payload: Partial<IUser>): Promise<IUser> => {
     );
 
 const admins = await User.find({ role: { $in: ['ADMIN', 'SUPER_ADMIN'] } }).select('_id');
+const adminIds = admins.map(admin => admin._id);
 
-for (const admin of admins) {
-  await NotificationService.createNotificationToDB({
-    text: `New user registered: ${createUser.name}`,
-    type: 'ADMIN',
-    receiver: [admin._id], // ✅ array of ObjectId, schema compatible
-    read: false
-  });
-}
+await NotificationService.createNotificationToDB({
+  text: `New user registered: ${createUser.name}`,
+  type: 'ADMIN',
+  receiver: adminIds, // সব admin একসাথে
+  read: false
+});
+
 
 
 return createUser;

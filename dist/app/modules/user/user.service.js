@@ -69,14 +69,13 @@ const createUserToDB = (payload) => __awaiter(void 0, void 0, void 0, function* 
     };
     yield user_model_1.User.findOneAndUpdate({ _id: createUser._id }, { $set: { authentication } });
     const admins = yield user_model_1.User.find({ role: { $in: ['ADMIN', 'SUPER_ADMIN'] } }).select('_id');
-    for (const admin of admins) {
-        yield notification_service_1.NotificationService.createNotificationToDB({
-            text: `New user registered: ${createUser.name}`,
-            type: 'ADMIN',
-            receiver: [admin._id], // ✅ array of ObjectId, schema compatible
-            read: false
-        });
-    }
+    const adminIds = admins.map(admin => admin._id);
+    yield notification_service_1.NotificationService.createNotificationToDB({
+        text: `New user registered: ${createUser.name}`,
+        type: 'ADMIN',
+        receiver: adminIds, // সব admin একসাথে
+        read: false
+    });
     return createUser;
 });
 // const getUserProfileFromDB = async (user: JwtPayload): Promise<Partial<IUser> & { totalPigeons: number }> => {
