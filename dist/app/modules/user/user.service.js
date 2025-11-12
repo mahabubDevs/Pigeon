@@ -68,7 +68,7 @@ const createUserToDB = (payload) => __awaiter(void 0, void 0, void 0, function* 
         expireAt: new Date(Date.now() + 3 * 60000),
     };
     yield user_model_1.User.findOneAndUpdate({ _id: createUser._id }, { $set: { authentication } });
-    const admins = yield user_model_1.User.find({ role: 'ADMIN' }).select('_id');
+    const admins = yield user_model_1.User.find({ role: { $in: ['ADMIN', 'SUPER_ADMIN'] } }).select('_id');
     for (const admin of admins) {
         yield notification_service_1.NotificationService.createNotificationToDB({
             text: `New user registered: ${createUser.name}`,
