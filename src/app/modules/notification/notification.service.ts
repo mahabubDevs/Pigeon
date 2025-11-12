@@ -138,7 +138,7 @@ const recentNotification = async (query:getAllNotification = {}): Promise<{
 // read notifications only for admin
 const adminReadNotificationToDB = async (): Promise<INotification | null> => {
     const result: any = await Notification.updateMany(
-        { type: 'ADMIN', read: false },
+        {  read: false },
         { $set: { read: true } }
     );
     return result;

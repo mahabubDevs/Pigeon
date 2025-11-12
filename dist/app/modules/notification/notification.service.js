@@ -89,7 +89,7 @@ const recentNotification = (...args_1) => __awaiter(void 0, [...args_1], void 0,
 });
 // read notifications only for admin
 const adminReadNotificationToDB = () => __awaiter(void 0, void 0, void 0, function* () {
-    const result = yield notification_model_1.Notification.updateMany({ type: 'ADMIN', read: false }, { $set: { read: true } });
+    const result = yield notification_model_1.Notification.updateMany({ read: false }, { $set: { read: true } });
     return result;
 });
 const getUnreadCount = () => __awaiter(void 0, void 0, void 0, function* () {
