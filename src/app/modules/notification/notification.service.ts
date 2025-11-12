@@ -147,13 +147,13 @@ const adminReadNotificationToDB = async (): Promise<INotification | null> => {
 
 
 
-const getUnreadCount = async (user: JwtPayload): Promise<number> => {
+const getUnreadCount = async (): Promise<number> => {
     const unreadCount = await Notification.countDocuments({
-        receiver: user._id,
         read: false
     });
     return unreadCount;
 };
+
 
 export const NotificationService = {
     createNotificationToDB,

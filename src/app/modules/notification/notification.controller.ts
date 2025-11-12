@@ -78,7 +78,7 @@ const unreadNotificationCount = catchAsync(async (req: Request, res: Response) =
         throw new ApiError(StatusCodes.UNAUTHORIZED, 'User not found');
     }
 
-    const unreadCount = await NotificationService.getUnreadCount(user);
+    const unreadCount = await NotificationService.getUnreadCount();
 
     sendResponse(res, {
         statusCode: StatusCodes.OK,

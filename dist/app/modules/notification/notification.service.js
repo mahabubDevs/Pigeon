@@ -92,9 +92,8 @@ const adminReadNotificationToDB = () => __awaiter(void 0, void 0, void 0, functi
     const result = yield notification_model_1.Notification.updateMany({ type: 'ADMIN', read: false }, { $set: { read: true } });
     return result;
 });
-const getUnreadCount = (user) => __awaiter(void 0, void 0, void 0, function* () {
+const getUnreadCount = () => __awaiter(void 0, void 0, void 0, function* () {
     const unreadCount = yield notification_model_1.Notification.countDocuments({
-        receiver: user._id,
         read: false
     });
     return unreadCount;
