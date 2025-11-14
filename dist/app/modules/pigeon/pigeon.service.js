@@ -445,16 +445,46 @@ const createPigeonToDB = (data, files, user) => __awaiter(void 0, void 0, void 0
         }
     }
     // 🔍 Duplicate check: same ringNumber + country + birthYear (only verified pigeons)
+    // if (parsedData.ringNumber && parsedData.country && parsedData.birthYear) {
+    //   const duplicatePigeon = await Pigeon.findOne({
+    //     ringNumber: parsedData.ringNumber,
+    //     country: parsedData.country,
+    //     birthYear: parsedData.birthYear,
+    //     verified: true, // ✅ শুধুমাত্র verified পায়রা চেক করবে
+    //   });
+    //   if (duplicatePigeon) {
+    //     throw new ApiError(
+    //       StatusCodes.CONFLICT,
+    //       "This pigeon is already registered (verified) in our database. To add it to your loft database, go to the Pigeon Database and press the '+' button."
+    //     );
+    //   }
+    // }
+    // 🔍 Duplicate check logic (verified + unverified rules)
     if (parsedData.ringNumber && parsedData.country && parsedData.birthYear) {
-        const duplicatePigeon = yield pigeon_model_1.Pigeon.findOne({
-            ringNumber: parsedData.ringNumber,
-            country: parsedData.country,
-            birthYear: parsedData.birthYear,
-            verified: true, // ✅ শুধুমাত্র verified পায়রা চেক করবে
+        const { ringNumber, country, birthYear } = parsedData;
+        // ✅ Step 1: Check for verified pigeon
+        const verifiedPigeon = yield pigeon_model_1.Pigeon.findOne({
+            ringNumber,
+            country,
+            birthYear,
+            verified: true,
         });
-        if (duplicatePigeon) {
+        if (verifiedPigeon) {
             throw new ApiErrors_1.default(http_status_codes_1.StatusCodes.CONFLICT, "This pigeon is already registered (verified) in our database. To add it to your loft database, go to the Pigeon Database and press the '+' button.");
         }
+        // ✅ Step 2: Check for unverified pigeons with same ringNumber + year + country
+        const unverifiedExist = yield pigeon_model_1.Pigeon.findOne({
+            ringNumber,
+            country,
+            birthYear,
+            verified: false,
+            user: user._id, // same user check
+        });
+        if (unverifiedExist) {
+            throw new ApiErrors_1.default(http_status_codes_1.StatusCodes.CONFLICT, "You have already added this pigeon (same ring number, country, and year) once. You cannot add it again.");
+        }
+        // যদি অন্য কেউ একই (unverified) পায়রা তৈরি করে রাখে, তবুও নতুন user তৈরি করতে পারবে।
+        // তাই এখানে অন্য user check করা হচ্ছে না।
     }
     // Save pigeon
     parsedData.user = user._id;
