@@ -11,7 +11,7 @@ export const RoleController = {
     sendResponse(res, {
       statusCode: StatusCodes.CREATED,
       success: true,
-      message: "Role created successfully",
+      message: "Role created successfullys",
       data: role,
     });
   }),
