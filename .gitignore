@@ -3,8 +3,7 @@ uploads
 /winston
 
 /prisma
-.env
-.env.local
 
 /prisma
 .model.prisma
+config.bat
